@@ -1,0 +1,43 @@
+{
+  "name": "feature-pipeline",
+  "version": "1.0",
+  "description": "Implement a full feature across all layers: schema → API → UI → tests → docs",
+  "trigger_keywords": ["new feature", "full implementation", "end-to-end feature"],
+  "steps": [
+    {
+      "id": "schema",
+      "agent": "database-specialist",
+      "prompt": "Design the database schema and migration for the new feature. Output migration SQL and entity definitions.",
+      "output_key": "schema",
+      "depends_on": []
+    },
+    {
+      "id": "api_code",
+      "agent": "database-specialist",
+      "prompt": "Using the schema designed in the previous step, implement the API endpoints (controller, service, repository layers) with validation.",
+      "output_key": "api_code",
+      "depends_on": ["schema"]
+    },
+    {
+      "id": "ui_code",
+      "agent": "ui-specialist",
+      "prompt": "Build the UI components for the new feature. Cover all states: loading, empty, error, success.",
+      "output_key": "ui_code",
+      "depends_on": ["api_code"]
+    },
+    {
+      "id": "test_code",
+      "agent": "test-engineer",
+      "prompt": "Write unit and integration tests for the backend API and frontend components created in previous steps.",
+      "output_key": "test_code",
+      "depends_on": ["api_code", "ui_code"]
+    },
+    {
+      "id": "docs",
+      "agent": "doc-agent",
+      "prompt": "Document the new feature: update API docs, add changelog entry, write migration guide if needed.",
+      "output_key": "docs",
+      "depends_on": ["api_code", "ui_code"]
+    }
+  ]
+}

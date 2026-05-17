@@ -1,0 +1,12 @@
+{
+  "name": "agent-testing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Framework de pruebas para agentes y skills de OpenCode",
+  "scripts": {
+    "test": "node run.mjs",
+    "test:summary": "node run.mjs 2>&1 | Select-String -Pattern 'PASS|FAIL|SKIP|Summary|Total'",
+    "test:report": "node -e \"const m = require('./run.mjs'); console.log(JSON.stringify(m, null, 2))\""
+  },
+  "type": "module"
+}

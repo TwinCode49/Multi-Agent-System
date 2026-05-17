@@ -1,0 +1,36 @@
+{
+  "name": "full-review-pipeline",
+  "version": "1.0",
+  "description": "Review code for quality, security, performance, and generate documentation",
+  "trigger_keywords": ["full review", "complete analysis", "audit codebase"],
+  "steps": [
+    {
+      "id": "code_review",
+      "agent": "code-reviewer",
+      "prompt": "Review the following code for correctness, design, and maintainability. Output structured findings.",
+      "output_key": "code_review",
+      "depends_on": []
+    },
+    {
+      "id": "security_review",
+      "agent": "security-reviewer",
+      "prompt": "Review the same code for vulnerabilities, OWASP Top 10 risks, and auth issues.",
+      "output_key": "security_review",
+      "depends_on": []
+    },
+    {
+      "id": "perf_review",
+      "agent": "perf-engineer",
+      "prompt": "Review the code for performance bottlenecks, N+1 queries, caching opportunities, and bundle size issues.",
+      "output_key": "perf_review",
+      "depends_on": []
+    },
+    {
+      "id": "synthesis",
+      "agent": "doc-agent",
+      "prompt": "Synthesize the findings from code review, security review, and performance review into a unified report. Merge related findings, flag conflicts, and prioritize by severity.",
+      "output_key": "final_report",
+      "depends_on": ["code_review", "security_review", "perf_review"]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "agent": "code-reviewer",
+  "type": "secondary",
+  "checks": {
+    "frontmatter": {
+      "description": "starts with TRIGGER KEYWORDS:",
+      "mode": "subagent",
+      "permission": { "edit": "deny", "bash": "deny" }
+    },
+    "keywords": ["review", "PR", "code-quality", "lint", "refactor", "complexity", "SOLID"],
+    "sections": ["Core Responsibilities", "Behavior Rules", "Response Format", "Constraints", "Handoff Protocol"],
+    "contains": ["BLOCKER", "cyclomatic", "correctness", "WET", "KI"],
+    "readOnly": true,
+    "expectedModel": "claude"
+  }
+}

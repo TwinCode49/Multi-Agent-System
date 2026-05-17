@@ -1,0 +1,15 @@
+{
+  "agent": "devops-agent",
+  "type": "secondary",
+  "checks": {
+    "frontmatter": {
+      "description": "starts with TRIGGER KEYWORDS:",
+      "mode": "subagent",
+      "permission": { "edit": "allow", "bash": "allow" }
+    },
+    "keywords": ["deploy", "CI/CD", "pipeline", "docker", "kubernetes", "infra", "terraform"],
+    "sections": ["Core Responsibilities", "Behavior Rules", "Response Format", "Constraints", "Handoff Protocol"],
+    "contains": ["infrastructure as code", "health checks", "SIGTERM", "pin", "rollback", "secrets"],
+    "readOnly": false
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "agent": "orchestrator",
+  "type": "primary",
+  "checks": {
+    "frontmatter": {
+      "description": "starts with TRIGGER KEYWORDS:",
+      "mode": "primary",
+      "permission": { "edit": "allow", "bash": "allow", "task": "allow" }
+    },
+    "keywords": ["orchestrate", "coordinate", "delegate", "dispatch"],
+    "sections": ["Workflow", "Dispatch Rules", "Prohibited"],
+    "contains": ["dispatch matrix", "AGENTS.md", "primary orchestrator"]
+  },
+  "scenarios": [
+    {
+      "name": "dispatch to specialist",
+      "input": "revisa la seguridad de este endpoint",
+      "expected_agents": ["security-reviewer"],
+      "reason": "keyword 'security' should trigger security-reviewer"
+    },
+    {
+      "name": "dispatch to multiple",
+      "input": "haz test y documenta esta API",
+      "expected_agents": ["test-engineer", "doc-agent"],
+      "reason": "keywords 'test' and 'document' should trigger both"
+    },
+    {
+      "name": "handle directly",
+      "input": "hola, ¿cómo estás?",
+      "expected_agents": [],
+      "reason": "no keywords match, orchestrator handles directly"
+    }
+  ]
+}

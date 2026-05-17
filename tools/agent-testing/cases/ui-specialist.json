@@ -1,0 +1,15 @@
+{
+  "agent": "ui-specialist",
+  "type": "secondary",
+  "checks": {
+    "frontmatter": {
+      "description": "starts with TRIGGER KEYWORDS:",
+      "mode": "subagent",
+      "permission": { "edit": "allow", "bash": "allow" }
+    },
+    "keywords": ["UI", "UX", "component", "layout", "responsive", "accessibility", "WCAG", "Tailwind"],
+    "sections": ["Core Responsibilities", "Behavior Rules", "Response Format", "Constraints", "Handoff Protocol"],
+    "contains": ["WCAG", "semantic HTML", "keyboard accessible", "mobile-first", "prefers-reduced-motion", "design tokens"],
+    "readOnly": false
+  }
+}

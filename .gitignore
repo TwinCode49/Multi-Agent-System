@@ -1,0 +1,16 @@
+# .NET build artifacts
+dashboard/backend/Dashboard.Api/bin/
+dashboard/backend/Dashboard.Api/obj/
+
+# Workflow runtime state
+tools/agent-workflows/runs/*.json
+!tools/agent-workflows/runs/.gitkeep
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.idea/
+.vs/
+*.sln.ide/

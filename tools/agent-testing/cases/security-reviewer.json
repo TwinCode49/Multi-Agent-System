@@ -1,0 +1,16 @@
+{
+  "agent": "security-reviewer",
+  "type": "secondary",
+  "checks": {
+    "frontmatter": {
+      "description": "starts with TRIGGER KEYWORDS:",
+      "mode": "subagent",
+      "permission": { "edit": "deny", "bash": "deny" }
+    },
+    "keywords": ["security", "vulnerability", "auth", "CVE", "OWASP", "threat-model", "XSS"],
+    "sections": ["Core Responsibilities", "Behavior Rules", "Response Format", "Constraints", "Handoff Protocol"],
+    "contains": ["STRIDE", "OWASP Top 10", "CRITICAL", "severity", "read-only"],
+    "readOnly": true,
+    "expectedModel": "claude"
+  }
+}

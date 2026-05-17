@@ -1,0 +1,36 @@
+{
+  "name": "docs-generation",
+  "version": "1.0",
+  "description": "Analyze code and generate comprehensive documentation",
+  "trigger_keywords": ["generate docs", "document code", "auto-document"],
+  "steps": [
+    {
+      "id": "api_inventory",
+      "agent": "code-reviewer",
+      "prompt": "Analyze the codebase structure: list all public APIs, exports, interfaces, types, and their relationships.",
+      "output_key": "api_inventory",
+      "depends_on": []
+    },
+    {
+      "id": "readme",
+      "agent": "doc-agent",
+      "prompt": "Generate or update the project README based on the code analysis. Include: overview, installation, usage examples, API reference, contributing guide.",
+      "output_key": "readme",
+      "depends_on": ["api_inventory"]
+    },
+    {
+      "id": "apidocs",
+      "agent": "doc-agent",
+      "prompt": "Generate OpenAPI/Swagger specs or JSDoc annotations for all public endpoints and functions identified in the analysis.",
+      "output_key": "api_docs",
+      "depends_on": ["api_inventory"]
+    },
+    {
+      "id": "changelog",
+      "agent": "doc-agent",
+      "prompt": "Update the CHANGELOG following Keep a Changelog format based on recent git history and the code analysis.",
+      "output_key": "changelog",
+      "depends_on": ["api_inventory"]
+    }
+  ]
+}

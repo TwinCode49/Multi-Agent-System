@@ -1,0 +1,318 @@
+{
+  "timestamp": "2026-05-17T00:35:22.509Z",
+  "summary": {
+    "agents_evaluated": 9,
+    "structural_pass_rate": 1,
+    "test_pass_rate": 1,
+    "cross_platform_sync_rate": 1,
+    "overall_health": "green"
+  },
+  "agents": {
+    "code-reviewer": {
+      "keywords_count": 28,
+      "mode": "subagent",
+      "sections_completeness": 100,
+      "sections_present": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "sections_required": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "do_not_rules": 6,
+      "frontmatter_valid": true,
+      "has_model": true,
+      "read_only": true,
+      "read_only_consistent": true,
+      "handoff_present": true,
+      "alerts": []
+    },
+    "database-specialist": {
+      "keywords_count": 22,
+      "mode": "subagent",
+      "sections_completeness": 100,
+      "sections_present": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "sections_required": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "do_not_rules": 6,
+      "frontmatter_valid": true,
+      "has_model": true,
+      "read_only": false,
+      "read_only_consistent": true,
+      "handoff_present": true,
+      "alerts": []
+    },
+    "devops-agent": {
+      "keywords_count": 41,
+      "mode": "subagent",
+      "sections_completeness": 100,
+      "sections_present": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "sections_required": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "do_not_rules": 5,
+      "frontmatter_valid": true,
+      "read_only": false,
+      "read_only_consistent": true,
+      "handoff_present": true,
+      "alerts": []
+    },
+    "doc-agent": {
+      "keywords_count": 17,
+      "mode": "subagent",
+      "sections_completeness": 100,
+      "sections_present": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "sections_required": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "do_not_rules": 5,
+      "frontmatter_valid": true,
+      "read_only": false,
+      "read_only_consistent": true,
+      "handoff_present": true,
+      "alerts": []
+    },
+    "orchestrator": {
+      "keywords_count": 20,
+      "mode": "primary",
+      "sections_completeness": 100,
+      "sections_present": [
+        "Workflow",
+        "Dispatch Rules",
+        "Prohibited"
+      ],
+      "sections_required": [
+        "Workflow",
+        "Dispatch Rules",
+        "Prohibited"
+      ],
+      "do_not_rules": 5,
+      "frontmatter_valid": true,
+      "read_only": false,
+      "read_only_consistent": true,
+      "handoff_present": false,
+      "alerts": []
+    },
+    "perf-engineer": {
+      "keywords_count": 32,
+      "mode": "subagent",
+      "sections_completeness": 100,
+      "sections_present": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "sections_required": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "do_not_rules": 6,
+      "frontmatter_valid": true,
+      "read_only": false,
+      "read_only_consistent": true,
+      "handoff_present": true,
+      "alerts": []
+    },
+    "security-reviewer": {
+      "keywords_count": 30,
+      "mode": "subagent",
+      "sections_completeness": 100,
+      "sections_present": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "sections_required": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "do_not_rules": 6,
+      "frontmatter_valid": true,
+      "has_model": true,
+      "read_only": true,
+      "read_only_consistent": true,
+      "handoff_present": true,
+      "alerts": []
+    },
+    "test-engineer": {
+      "keywords_count": 24,
+      "mode": "subagent",
+      "sections_completeness": 100,
+      "sections_present": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "sections_required": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "do_not_rules": 7,
+      "frontmatter_valid": true,
+      "read_only": false,
+      "read_only_consistent": true,
+      "handoff_present": true,
+      "alerts": []
+    },
+    "ui-specialist": {
+      "keywords_count": 43,
+      "mode": "subagent",
+      "sections_completeness": 100,
+      "sections_present": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "sections_required": [
+        "Core Responsibilities",
+        "Behavior Rules",
+        "Response Format",
+        "Constraints",
+        "Handoff Protocol"
+      ],
+      "do_not_rules": 7,
+      "frontmatter_valid": true,
+      "read_only": false,
+      "read_only_consistent": true,
+      "handoff_present": true,
+      "alerts": []
+    }
+  },
+  "skills": {
+    "backend": {
+      "keywords_count": 41,
+      "has_goal": true,
+      "has_constraints": true,
+      "has_references": true,
+      "github_exists": true,
+      "cross_platform_synced": true,
+      "frontmatter_valid": true
+    },
+    "containerization": {
+      "keywords_count": 39,
+      "has_goal": true,
+      "has_constraints": true,
+      "has_references": true,
+      "github_exists": true,
+      "cross_platform_synced": true,
+      "frontmatter_valid": true
+    },
+    "database": {
+      "keywords_count": 47,
+      "has_goal": true,
+      "has_constraints": true,
+      "has_references": true,
+      "github_exists": true,
+      "cross_platform_synced": true,
+      "frontmatter_valid": true
+    },
+    "documentation": {
+      "keywords_count": 23,
+      "has_goal": true,
+      "has_constraints": true,
+      "has_references": true,
+      "github_exists": true,
+      "cross_platform_synced": true,
+      "frontmatter_valid": true
+    },
+    "frontend": {
+      "keywords_count": 39,
+      "has_goal": true,
+      "has_constraints": true,
+      "has_references": true,
+      "github_exists": true,
+      "cross_platform_synced": true,
+      "frontmatter_valid": true
+    },
+    "prompt-optimization": {
+      "keywords_count": 30,
+      "has_goal": true,
+      "has_constraints": true,
+      "has_references": true,
+      "github_exists": true,
+      "cross_platform_synced": true,
+      "frontmatter_valid": true
+    },
+    "terminal": {
+      "keywords_count": 70,
+      "has_goal": true,
+      "has_constraints": true,
+      "has_references": true,
+      "github_exists": true,
+      "cross_platform_synced": true,
+      "frontmatter_valid": true
+    },
+    "testing": {
+      "keywords_count": 39,
+      "has_goal": true,
+      "has_constraints": true,
+      "has_references": true,
+      "github_exists": true,
+      "cross_platform_synced": true,
+      "frontmatter_valid": true
+    }
+  },
+  "system": {
+    "total_tests": 144,
+    "tests_passed": 144,
+    "tests_failed": 0,
+    "skills_total": 8,
+    "skills_synced": 8
+  },
+  "alerts": []
+}
