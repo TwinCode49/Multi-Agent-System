@@ -1,7 +1,7 @@
 # Fase 2 — tools_dynamic: Portable Agent Orchestration System
 
 **Fecha:** 2026-05-17
-**Estado:** Phase 0 ✅ · Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · Phase 4–5 Planificadas
+**Estado:** Phase 0 ✅ · Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · Phase 4 ✅ · Phase 5 Planificada
 
 ## Visión General
 

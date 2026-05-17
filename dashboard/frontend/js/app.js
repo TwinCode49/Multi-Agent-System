@@ -1,20 +1,12 @@
-const API = "http://localhost:5000/api/dashboard";
-let currentPage = 1;
-let totalOrders = 0;
-let revenueChart = null;
-let productsChart = null;
-let growthChart = null;
+const API = "http://localhost:5071/api/metrics";
+let healthChart = null;
+let testsChart = null;
 
 function $(id) { return document.getElementById(id); }
 
-function fmt(n) { return n.toLocaleString("en-US"); }
-function cur(n) { return "$" + Number(n).toLocaleString("en-US", {minimumFractionDigits: 0}); }
-
 function time() {
   const d = new Date();
-  $("currentTime").textContent = d.toLocaleString("en-US", {
-    dateStyle: "medium", timeStyle: "short"
-  });
+  $("currentTime").textContent = d.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 }
 setInterval(time, 1000); time();
 
@@ -24,133 +16,152 @@ async function fetchJSON(url) {
   return r.json();
 }
 
-async function loadStats() {
-  const s = await fetchJSON(`${API}/summary`);
-  $("stat-totalUsers").textContent = fmt(s.totalUsers);
-  $("stat-activeUsers").textContent = fmt(s.activeUsers);
-  $("stat-totalRevenue").textContent = cur(s.totalRevenue);
-  $("stat-totalOrders").textContent = fmt(s.totalOrders);
-  $("stat-conversionRate").textContent = s.conversionRate + "%";
-  $("stat-avgOrderValue").textContent = cur(s.avgOrderValue);
+function agentIcon(agent) {
+  const color = agent.alerts?.some(a => a.severity === "red") ? "🔴" :
+                agent.alerts?.length > 0 ? "🟡" : "🟢";
+  return color;
 }
 
-async function loadRevenue() {
-  const data = await fetchJSON(`${API}/revenue?days=30`);
-  if (revenueChart) revenueChart.destroy();
-  revenueChart = new Chart($("revenueChart"), {
-    type: "line",
-    data: {
-      labels: data.map(d => d.date.slice(5)),
-      datasets: [{
-        label: "Revenue",
-        data: data.map(d => d.amount),
-        borderColor: "#60a5fa",
-        backgroundColor: "rgba(96,165,250,0.08)",
-        fill: true,
-        tension: 0.3,
-        pointRadius: 2,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false }, title: { display: true, text: "Revenue (30 days)", color: "#e1e4ed" } },
-      scales: {
-        x: { ticks: { color: "#8b8fa3", maxTicksLimit: 10 } },
-        y: { ticks: { color: "#8b8fa3", callback: v => "$" + v / 1000 + "k" } }
-      }
-    }
-  });
+function loadSummary() {
+  fetchJSON(`${API}/summary`).then(s => {
+    $("healthIcon").textContent = s.overallHealth === "green" ? "🟢" :
+                                  s.overallHealth === "yellow" ? "🟡" :
+                                  s.overallHealth === "red" ? "🔴" : "⚪";
+    $("structuralRate").textContent = s.structuralPassRate;
+    $("testRate").textContent = s.testPassRate;
+    $("crossRate").textContent = s.crossPlatformSyncRate;
+    $("generatedAt").textContent = s.generatedAt ? `Report: ${new Date(s.generatedAt).toLocaleString()}` : "";
+    return s;
+  }).then(s => {
+    fetchJSON(`${API}/alerts`).then(alerts => {
+      $("alertsCount").textContent = `${alerts.length} alerts`;
+      $("alertsBadge").textContent = alerts.length;
+    });
+    fetchJSON(`${API}/agents`).then(agents => {
+      $("agentsCount").textContent = `${agents.length} agents`;
+    });
+  }).catch(() => {});
 }
 
-async function loadTopProducts() {
-  const data = await fetchJSON(`${API}/top-products`);
-  if (productsChart) productsChart.destroy();
-  const colors = ["#60a5fa", "#4ade80", "#fbbf24", "#f87171", "#a78bfa", "#fb923c"];
-  productsChart = new Chart($("productsChart"), {
-    type: "bar",
-    data: {
-      labels: data.map(d => d.name),
-      datasets: [{
-        label: "Revenue",
-        data: data.map(d => d.revenue),
-        backgroundColor: colors.slice(0, data.length),
-      }]
-    },
-    options: {
-      indexAxis: "y",
-      responsive: true,
-      plugins: { legend: { display: false }, title: { display: true, text: "Top Products by Revenue", color: "#e1e4ed" } },
-      scales: {
-        x: { ticks: { color: "#8b8fa3", callback: v => "$" + v / 1000 + "k" } },
-        y: { ticks: { color: "#e1e4ed" } }
-      }
-    }
-  });
-}
+function loadAgents() {
+  fetchJSON(`${API}/agents`).then(agents => {
+    const container = $("agentCards");
+    container.innerHTML = agents.map(a => `
+      <div class="card agent-card ${a.alerts?.some(x => x.severity === "red") ? "card-red" : a.alerts?.length > 0 ? "card-yellow" : "card-green"}">
+        <div class="card-header">
+          <span class="agent-icon">${agentIcon(a)}</span>
+          <span class="agent-name">${a.name}</span>
+        </div>
+        <div class="card-body">
+          <div class="metric-row"><span class="metric-label">Keywords</span><span class="metric-value">${a.keywordsCount}</span></div>
+          <div class="metric-row"><span class="metric-label">Mode</span><span class="metric-value">${a.mode}</span></div>
+          <div class="metric-row"><span class="metric-label">Sections</span><span class="metric-value">${a.sectionsCompleteness}%</span></div>
+          <div class="metric-row"><span class="metric-label">Handoff</span><span class="metric-value">${a.handoffPresent ? "✓" : "✗"}</span></div>
+          <div class="metric-row"><span class="metric-label">Do NOT rules</span><span class="metric-value">${a.doNotRules}</span></div>
+          ${a.readOnly ? `<div class="metric-row"><span class="metric-label">Read-only</span><span class="metric-value">${a.readOnlyConsistent ? "✓" : "⚠"}</span></div>` : ""}
+        </div>
+        ${a.alerts?.length > 0 ? `<div class="card-alerts">${a.alerts.map(al => `<span class="alert-chip ${al.severity}">${al.msg}</span>`).join("")}</div>` : ""}
+      </div>
+    `).join("");
 
-async function loadGrowth() {
-  const data = await fetchJSON(`${API}/user-growth`);
-  if (growthChart) growthChart.destroy();
-  growthChart = new Chart($("growthChart"), {
-    type: "bar",
-    data: {
-      labels: data.map(d => d.month),
-      datasets: [
-        {
-          label: "New Users",
-          data: data.map(d => d.newUsers),
-          backgroundColor: "rgba(96,165,250,0.7)",
-          order: 2,
-        },
-        {
-          label: "Total Users",
-          data: data.map(d => d.totalUsers),
-          borderColor: "#4ade80",
-          backgroundColor: "rgba(74,222,128,0.05)",
-          fill: true,
-          type: "line",
-          tension: 0.3,
-          pointRadius: 2,
-          order: 1,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: "#e1e4ed" } },
-        title: { display: true, text: "User Growth (12 months)", color: "#e1e4ed" }
+    // Health chart
+    const green = agents.filter(a => !a.alerts?.length).length;
+    const yellow = agents.filter(a => a.alerts?.some(x => x.severity === "yellow") && !a.alerts?.some(x => x.severity === "red")).length;
+    const red = agents.filter(a => a.alerts?.some(x => x.severity === "red")).length;
+    if (healthChart) healthChart.destroy();
+    healthChart = new Chart($("healthChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Healthy", "Warnings", "Issues"],
+        datasets: [{
+          data: [green, yellow, red],
+          backgroundColor: ["#4ade80", "#fbbf24", "#f87171"],
+          borderWidth: 0,
+        }]
       },
-      scales: {
-        x: { ticks: { color: "#8b8fa3" } },
-        y: { ticks: { color: "#8b8fa3", callback: v => fmt(v) } }
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: "#e1e4ed" } },
+          title: { display: true, text: "Agent Health", color: "#e1e4ed" }
+        }
       }
-    }
-  });
+    });
+  }).catch(() => {});
 }
 
-async function loadOrders(page) {
-  if (page < 1) return;
-  const limit = parseInt($("pageSize").value);
-  currentPage = page;
-  const res = await fetchJSON(`${API}/orders?page=${page}&limit=${limit}`);
-  totalOrders = res.total;
-  const tbody = $("ordersBody");
-  tbody.innerHTML = res.data.map(o => `<tr>
-    <td>${o.id}</td>
-    <td>${o.customer}</td>
-    <td>${o.product}</td>
-    <td>${cur(o.amount)}</td>
-    <td><span class="status status-${o.status}">${o.status}</span></td>
-    <td>${o.date}</td>
-  </tr>`).join("");
-  $("pageInfo").textContent = `Page ${page} of ${Math.ceil(totalOrders / limit)} (${fmt(totalOrders)} orders)`;
-  $("prevBtn").disabled = page <= 1;
-  $("nextBtn").disabled = page >= Math.ceil(totalOrders / limit);
+function loadSkills() {
+  fetchJSON(`${API}/skills`).then(skills => {
+    const tbody = $("skillsBody");
+    tbody.innerHTML = skills.map(s => `<tr>
+      <td>${s.name}</td>
+      <td>${s.keywordsCount}</td>
+      <td class="${s.crossPlatformSynced ? "status-ok" : "status-ko"}">${s.crossPlatformSynced ? "✓" : "✗"}</td>
+      <td>${s.hasGoal ? "✓" : "✗"}</td>
+      <td>${s.hasReferences ? "✓" : "✗"}</td>
+    </tr>`).join("");
+  }).catch(() => {});
+}
+
+function loadAlerts() {
+  fetchJSON(`${API}/alerts`).then(alerts => {
+    const list = $("alertsList");
+    if (alerts.length === 0) {
+      list.innerHTML = '<div class="no-alerts">No alerts</div>';
+      return;
+    }
+    list.innerHTML = alerts.map(a => `
+      <div class="alert-item ${a.severity}">
+        <span class="alert-sev">${a.severity === "red" ? "🔴" : "🟡"}</span>
+        <span class="alert-agent">[${a.agent}]</span>
+        <span class="alert-msg">${a.msg}</span>
+      </div>
+    `).join("");
+  }).catch(() => {});
+}
+
+function loadWorkflows() {
+  fetchJSON(`${API}/workflows/runs`).then(runs => {
+    const tbody = $("workflowsBody");
+    if (runs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No workflow runs yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = runs.slice(0, 20).map(r => `<tr>
+      <td class="mono">${r.id}</td>
+      <td>${r.workflow}</td>
+      <td><span class="status status-${r.status}">${r.status}</span></td>
+      <td>${r.progress}</td>
+      <td>${r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "—"}</td>
+    </tr>`).join("");
+
+    // Tests chart
+    fetchJSON(`${API}/summary`).then(s => {
+      if (testsChart) testsChart.destroy();
+      testsChart = new Chart($("testsChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Passed", "Failed"],
+          datasets: [{
+            data: [s.testsPassed, s.testsFailed],
+            backgroundColor: ["#4ade80", "#f87171"],
+            borderWidth: 0,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: "#e1e4ed" } },
+            title: { display: true, text: `Tests (${s.totalTests} total)`, color: "#e1e4ed" }
+          }
+        }
+      });
+    }).catch(() => {});
+  }).catch(() => {});
 }
 
 async function loadAll() {
-  await Promise.all([loadStats(), loadRevenue(), loadTopProducts(), loadGrowth(), loadOrders(1)]);
+  await Promise.all([loadSummary(), loadAgents(), loadSkills(), loadAlerts(), loadWorkflows()]);
 }
 
-document.addEventListener("DOMContentLoaded", loadAll);
+document.addEventListener("DOMContentLoaded", () => { loadAll(); setInterval(loadAll, 30000); });

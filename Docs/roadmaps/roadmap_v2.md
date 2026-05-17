@@ -7,6 +7,8 @@
 > **Fase 1**: ✅ Completada
 > **Fase 2**: ✅ Completada
 > **Fase 3**: ✅ Completada
+> **Fase 4**: ✅ Completada
+> **Fase 5**: ✅ Completada
 
 ## Visión General
 
@@ -119,24 +121,79 @@ Implementar los comandos de análisis y diagnóstico.
 
 **Entregable**: Análisis completo de cualquier proyecto + reporte visual + recomendaciones ✅
 
-## Phase 4 💉 — Injection & Bootstrap
+## Phase 4 ✅ — Injection & Bootstrap
 
 Implementar la inyección de tools y procesos en el proyecto objetivo.
 
-- [ ] Templates base para `tools/agent-testing/` (runner + cases adaptados)
-- [ ] Templates base para `tools/agent-metrics/` (report + config)
-- [ ] Templates base para `tools/agent-workflows/` (definitions + executor)
-- [ ] Templates para `Docs/processes/` en español (README, multi-agent-workflows, background-execution, agent-handoff, performance-metrics)
-- [ ] Templates de configuración por plataforma (`.opencode/`, `.github/`, `.claude/`, antigravity)
-- [ ] `inject` command: copia templates + adaptación al proyecto target
-- [ ] `init` command: analyze → muestra resumen → preguntas → inject (full bootstrap interactivo)
-- [ ] Modo dry-run (`--dry-run`) que muestra diff sin escribir
-- [ ] Backup automático de archivos existentes antes de modificar
-- [ ] Tests de inyección con verificación post-inyección
+- [x] Templates para `tools/agent-testing/` (run.mjs + cases adaptados + README) 
+- [x] Templates para `tools/agent-metrics/` (report.mjs + README)
+- [x] Templates para `tools/agent-workflows/` (executor.mjs + run.mjs + definitions + README)
+- [x] Templates para `Docs/processes/` (README + 4 procesos de agentes en español)
+- [x] `core/injector.mjs` — carga templates, sustitución {{variables}}, backup, dry-run
+- [x] `commands/inject.mjs` — CLI con --dry-run, --tools, --processes, --all
+- [x] `init` command actualizado: analyze → inyecta (sin stub Phase 4)
+- [x] `--yes` mode: non-interactive full bootstrap
+- [x] Backup automático: `.bak.<timestamp>` antes de modificar existentes
+- [x] Tests: 25 tests (substitute, loadTemplate, resolveVariables, plan, execute, backup)
+- [x] Templates para `.opencode/agents/*.md` (9 agentes: orchestrator, code-reviewer, security-reviewer, test-engineer, doc-agent, database-specialist, ui-specialist, devops-agent, perf-engineer)
+- [x] Templates para `.opencode/skills/*/SKILL.md` (9 skills: testing, documentation, frontend, backend, database, containerization, prompt-optimization, terminal, customize-opencode)
+- [x] Template para `AGENTS.md` (dispatch matrix con 8 keywords-to-agent mappings)
+- [x] Template para `.opencode/opencode.json` (config con todos los agentes registrados)
+- [x] `vanilla-detector.suggestSkills()` y `vanilla-detector.suggestAgents()` — recomiendan skills/agentes según framework detectado
+- [x] `injector.plan()` actualizado: genera agentes, skills, AGENTS.md, opencode.json cuando se incluye `config` en componentes
+- [x] Framework-to-skills mapping: React → frontend, Express → backend+database+containerization, etc.
+- [x] Prueba real en proyecto vanilla Node.js+React: agents y skills creados correctamente
+- [x] `init` interactivo: cuando no detecta plataforma, pregunta al usuario qué plataforma(s) configurar (OpenCode, VS Code, Claude Code, Antigravity)
+- [x] `init --platform <name> --yes`: permite especificar plataforma target en modo no interactivo
+- [x] `inject --config`: flag para inyectar solo configuración de agentes/skills
+- [x] `doctor` ahora muestra vanilla detection info cuando no hay plataforma
+- [x] Fix: `init --yes` ahora inyecta en proyectos vanilla (antes saltaba)
+- [x] Fix: `init` interactivo ahora incluye `config` en opciones de componentes
+- [x] Fix: `inject` ahora soporta proyectos vanilla
+- [x] Multi-platform config: `plan()` genera config para cada plataforma detectada
 
-**Entregable**: Proyecto target completamente boostrapeado con tools + procesos + workflows
+**Entregable**: Proyecto target completamente boostrapeado con tools + procesos + agentes + skills + configuración ✅
 
-## Phase 5 📦 — Distribution & Documentation (Hybrid pnpm + npm)
+## Phase 5 📊 — Nexus Dashboard: Live Agent Metrics
+
+Transformar el dashboard demo (datos fake con `Random`) en un **panel de métricas reales** que consume los datos generados por las tools de agentes (`agent-metrics`, `agent-testing`, `agent-workflows`). El dashboard vive en `dashboard/` y sirve como herramienta de monitoreo local para cualquier proyecto boostrapeado.
+
+### Problema
+- [x] `dashboard/` actualmente mostraba datos de negocio ficticios (usuarios, órdenes, revenue) sin relación con el ecosistema de agentes
+- [x] Las tools generan datos valiosos (métricas de agents, resultados de tests, runs de workflows) pero no había UI que los visualice
+- [x] No había forma de ver el health del sistema multi-agente sin correr `report.mjs --save` y abrir el JSON manualmente
+
+### Solución
+
+**API Backend** (ASP.NET Core — `Dashboard.Api`):
+- [x] `GET /api/metrics/summary` — health general (🟢🟡🔴), structural pass rate, test pass rate, cross-platform sync rate, agent/skill counts
+- [x] `GET /api/metrics/agents` — lista de agentes con su metadata: keywords count, mode, sections completeness, handoff presence, alerts
+- [x] `GET /api/metrics/skills` — lista de skills con metadata: keywords count, cross-platform sync status, frontmatter validity
+- [x] `GET /api/metrics/alerts` — todos los alerts (red + yellow) del último reporte
+- [x] `GET /api/metrics/workflows/runs` — últimos workflow runs con status, progreso, steps
+- [x] `GET /api/metrics/workflows/definitions` — definiciones de workflow disponibles
+
+**DashboardService** reescrito:
+- [x] Lee `tools/agent-metrics/reports/latest.json` para datos de agents/skills/alerts
+- [x] Escanea `tools/agent-workflows/runs/` para workflow runs activos/completados
+- [x] Escanea `tools/agent-workflows/definitions/` para definiciones disponibles
+- [x] Fallback graceful si los archivos no existen (retorna `[]` o `"no-data"` en lugar de error)
+
+**Frontend** (HTML+CSS+JS vanilla con Chart.js):
+- [x] **Agent Health Cards** — tarjetas por agente con semáforo, keywords count, handoff presence, mode
+- [x] **Overall Health Banner** — indicador grande 🟢🟡🔴 con pass rates
+- [x] **Skill Sync Panel** — tabla de skills con estado de sync cross-platform
+- [x] **Alerts Timeline** — lista cronológica de alerts con severity color
+- [x] **Workflow Runs Panel** — tabla de runs recientes con status badge y progreso
+- [x] **Tests Summary** — donut chart pass/fail con counts
+- [x] Auto-refresh cada 30s con botón manual
+- [x] Chart.js integrado para visualizaciones (health donut + tests donut)
+
+**Entregable**: Nexus Dashboard conectado a datos reales de agents/skills/tests/workflows ✅
+
+---
+
+## Phase 6 📦 — Distribution & Documentation (Hybrid pnpm + npm)
 
 Empaquetar y distribuir la herramienta con una estrategia híbrida: **pnpm para desarrollo y testing** (seguridad por defecto contra supply chain attacks), **npm solo para el paso final de publicación OIDC** (mayor madurez en trusted publishing).
 
@@ -196,7 +253,8 @@ Cada fase genera procesos en `Docs/processes/`:
 | Generación de workflows adaptativos | `Docs/processes/tools-dynamic/workflow-generation.md` | 2 |
 | Análisis y reporte | `Docs/processes/tools-dynamic/analysis-report.md` | 3 |
 | Inyección de tools | `Docs/processes/tools-dynamic/injection.md` | 4 |
-| Publicación y distribución | `Docs/processes/tools-dynamic/distribution.md` | 5 |
+| Dashboard de métricas de agentes | `Docs/processes/tools-dynamic/dashboard.md` | 5 |
+| Publicación y distribución | `Docs/processes/tools-dynamic/distribution.md` | 6 |
 
 ---
 

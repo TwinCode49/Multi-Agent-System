@@ -1,6 +1,31 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
+const ALL_AGENTS = [
+  'orchestrator', 'code-reviewer', 'security-reviewer', 'test-engineer',
+  'doc-agent', 'database-specialist', 'ui-specialist', 'devops-agent', 'perf-engineer',
+];
+
+const ALL_SKILLS = [
+  'testing', 'documentation', 'prompt-optimization', 'terminal', 'customize-opencode',
+];
+
+const FRAMEWORK_SKILLS = {
+  'React/Vue/Angular': ['frontend'],
+  'Next.js/Nuxt': ['frontend', 'backend'],
+  'Express/Fastify/NestJS': ['backend', 'database', 'containerization'],
+  'Electron': ['frontend', 'backend'],
+  'Node.js (test framework detected)': ['backend', 'database'],
+  'Node.js (bundler detected)': ['frontend', 'backend'],
+  'ASP.NET Core': ['backend', 'database', 'containerization'],
+};
+
+const FRAMEWORK_AGENTS = {
+  'React/Vue/Angular': ['ui-specialist', 'test-engineer', 'code-reviewer'],
+  'Express/Fastify/NestJS': ['database-specialist', 'test-engineer', 'devops-agent', 'perf-engineer'],
+  'ASP.NET Core': ['database-specialist', 'devops-agent', 'test-engineer'],
+};
+
 export class VanillaDetector {
   detect(basePath) {
     const result = {
@@ -16,6 +41,7 @@ export class VanillaDetector {
       recommendedPlatform: null,
       detected: false,
       nodeVersion: null,
+      dependencies: [],
     };
 
     const pkgPath = join(basePath, 'package.json');
@@ -29,13 +55,13 @@ export class VanillaDetector {
         result.nodeVersion = pkg.engines?.node || null;
         const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
         if (allDeps) {
-          const deps = Object.keys(allDeps);
-          if (deps.some(d => d.match(/express|fastify|nestjs|koa/))) result.framework = 'Express/Fastify/NestJS';
-          else if (deps.some(d => d.match(/next|nuxt|remix|gatsby/))) result.framework = 'Next.js/Nuxt';
-          else if (deps.some(d => d.match(/react|vue|angular|svelte/))) result.framework = 'React/Vue/Angular';
-          else if (deps.some(d => d.match(/electron/))) result.framework = 'Electron';
-          else if (deps.some(d => d.match(/jest|vitest|mocha|cypress|playwright/))) result.framework = 'Node.js (test framework detected)';
-          else if (deps.some(d => d.match(/tsup|esbuild|vite|webpack/))) result.framework = 'Node.js (bundler detected)';
+          result.dependencies = Object.keys(allDeps);
+          if (result.dependencies.some(d => d.match(/express|fastify|nestjs|koa/))) result.framework = 'Express/Fastify/NestJS';
+          else if (result.dependencies.some(d => d.match(/next|nuxt|remix|gatsby/))) result.framework = 'Next.js/Nuxt';
+          else if (result.dependencies.some(d => d.match(/react|vue|angular|svelte/))) result.framework = 'React/Vue/Angular';
+          else if (result.dependencies.some(d => d.match(/electron/))) result.framework = 'Electron';
+          else if (result.dependencies.some(d => d.match(/jest|vitest|mocha|cypress|playwright/))) result.framework = 'Node.js (test framework detected)';
+          else if (result.dependencies.some(d => d.match(/tsup|esbuild|vite|webpack/))) result.framework = 'Node.js (bundler detected)';
         }
       } catch {
         // not readable, skip
@@ -91,6 +117,34 @@ export class VanillaDetector {
     result.recommendedPlatform = result.language === 'Node.js' ? 'opencode' : 'opencode';
 
     return result;
+  }
+
+  suggestSkills(vanillaInfo) {
+    const base = [...ALL_SKILLS];
+    const framework = vanillaInfo.framework;
+    if (framework && FRAMEWORK_SKILLS[framework]) {
+      for (const skill of FRAMEWORK_SKILLS[framework]) {
+        if (!base.includes(skill)) base.push(skill);
+      }
+    }
+    if (vanillaInfo.dependencies.some(d => d.match(/docker|compose/))) {
+      if (!base.includes('containerization')) base.push('containerization');
+    }
+    if (vanillaInfo.dependencies.some(d => d.match(/prisma|typeorm|drizzle|knex|sequelize|mongoose|mongodb|postgres|mysql/))) {
+      if (!base.includes('database')) base.push('database');
+    }
+    return base;
+  }
+
+  suggestAgents(vanillaInfo) {
+    const base = [...ALL_AGENTS];
+    const framework = vanillaInfo.framework;
+    if (framework && FRAMEWORK_AGENTS[framework]) {
+      for (const agent of FRAMEWORK_AGENTS[framework]) {
+        if (!base.includes(agent)) base.push(agent);
+      }
+    }
+    return base;
   }
 
   _findFiles(basePath, ext) {

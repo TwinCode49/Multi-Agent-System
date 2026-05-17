@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexus Dashboard</title>
+  <title>Nexus Dashboard — Agent Metrics</title>
   <link rel="stylesheet" href="css/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
@@ -12,45 +12,60 @@
     <h1>Nexus Dashboard</h1>
     <div class="topbar-meta">
       <span id="currentTime"></span>
+      <span id="generatedAt" class="generated"></span>
       <button id="refreshBtn" onclick="loadAll()">Refresh</button>
     </div>
   </header>
 
   <main class="container">
-    <section class="cards" id="statsCards">
-      <div class="card"><div class="card-label">Total Users</div><div class="card-value" id="stat-totalUsers">—</div></div>
-      <div class="card"><div class="card-label">Active Users</div><div class="card-value" id="stat-activeUsers">—</div></div>
-      <div class="card"><div class="card-label">Revenue</div><div class="card-value" id="stat-totalRevenue">—</div></div>
-      <div class="card"><div class="card-label">Orders</div><div class="card-value" id="stat-totalOrders">—</div></div>
-      <div class="card"><div class="card-label">Conversion</div><div class="card-value" id="stat-conversionRate">—</div></div>
-      <div class="card"><div class="card-label">Avg Order Value</div><div class="card-value" id="stat-avgOrderValue">—</div></div>
-    </section>
-
-    <section class="charts-row">
-      <div class="chart-box"><canvas id="revenueChart"></canvas></div>
-      <div class="chart-box"><canvas id="productsChart"></canvas></div>
-    </section>
-
-    <section class="charts-row">
-      <div class="chart-box full"><canvas id="growthChart"></canvas></div>
-    </section>
-
-    <section class="table-section">
-      <h2>Recent Orders</h2>
-      <div class="table-controls">
-        <select id="pageSize" onchange="loadOrders(1)">
-          <option value="5">5</option>
-          <option value="10" selected>10</option>
-          <option value="20">20</option>
-        </select>
-        <span id="pageInfo"></span>
-        <button onclick="loadOrders(currentPage - 1)" id="prevBtn">Prev</button>
-        <button onclick="loadOrders(currentPage + 1)" id="nextBtn">Next</button>
+    <!-- Overall Health Banner -->
+    <section class="health-banner" id="healthBanner">
+      <div class="health-icon" id="healthIcon">🟡</div>
+      <div class="health-stats">
+        <span>Structural: <strong id="structuralRate">—</strong>%</span>
+        <span>Tests: <strong id="testRate">—</strong>%</span>
+        <span>Cross-Platform: <strong id="crossRate">—</strong>%</span>
+        <span id="agentsCount" class="badge">0 agents</span>
+        <span id="alertsCount" class="badge alert-badge">0 alerts</span>
       </div>
+    </section>
+
+    <!-- Agent Health Cards -->
+    <section>
+      <h2>Agents</h2>
+      <div class="cards" id="agentCards"></div>
+    </section>
+
+    <!-- Charts Row -->
+    <section class="charts-row">
+      <div class="chart-box"><canvas id="healthChart"></canvas></div>
+      <div class="chart-box"><canvas id="testsChart"></canvas></div>
+    </section>
+
+    <!-- Skills + Workflows -->
+    <section class="panels-row">
+      <div class="panel skills-panel">
+        <h2>Skills</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Skill</th><th>Keywords</th><th>Sync</th><th>Goal</th><th>Refs</th></tr></thead>
+            <tbody id="skillsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel alerts-panel">
+        <h2>Alerts <span class="badge" id="alertsBadge">0</span></h2>
+        <div class="alerts-list" id="alertsList"></div>
+      </div>
+    </section>
+
+    <!-- Workflow Runs -->
+    <section class="table-section">
+      <h2>Workflow Runs</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Order</th><th>Customer</th><th>Product</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
-          <tbody id="ordersBody"></tbody>
+          <thead><tr><th>ID</th><th>Workflow</th><th>Status</th><th>Progress</th><th>Submitted</th></tr></thead>
+          <tbody id="workflowsBody"></tbody>
         </table>
       </div>
     </section>
