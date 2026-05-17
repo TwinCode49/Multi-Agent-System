@@ -80,7 +80,7 @@ Cada proceso debe incluir:
 | Proceso | Archivo | Estado | Descripción |
 |---|---|---|---|
 | Estándar de idioma | `AGENTS.md`, `Docs/` | Implementado (Fase 1) | Inglés para IA, Español para documentación de desarrollo |
-| Estructura de directorios | Estructura del proyecto | Implementado (Fase 1) | `.opencode/` y `.github/` para runtime; `agents/` y `skills/` raíz como referencia |
+| Estructura de directorios | Estructura del proyecto | Implementado (Fase 1) | `.opencode/` para OpenCode runtime, `.github/` para VS Code |
 
 ---
 
