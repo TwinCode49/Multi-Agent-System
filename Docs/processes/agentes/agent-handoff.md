@@ -158,7 +158,7 @@ El orquestador ahora incluye una sección completa de `## Handoff Protocol` que 
 - Orquestador: `.opencode/agents/orchestrator.md` (sección `## Handoff Protocol`)
 - Flujos multi-agente: `Docs/processes/agentes/multi-agent-workflows.md`
 - Ejecución background: `Docs/processes/agentes/background-execution.md`
-- Roadmap: `Docs/project/roadmap.md`
+- Roadmap v1: `Docs/roadmaps/roadmap_v1.md`
 
 ---
 

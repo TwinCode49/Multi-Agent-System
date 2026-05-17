@@ -142,7 +142,7 @@ Ver `Docs/processes/deploy/parallel-execution.md` para requerimientos completos.
 - Herramienta: `tools/agent-workflows/run.mjs`
 - Definiciones: `tools/agent-workflows/definitions/`
 - Ejecución paralela (omitido): `Docs/processes/deploy/parallel-execution.md`
-- Roadmap: `Docs/project/roadmap.md`
+- Roadmap v1: `Docs/roadmaps/roadmap_v1.md`
 - Catálogo de procesos: `Docs/processes/README.md`
 
 ---
