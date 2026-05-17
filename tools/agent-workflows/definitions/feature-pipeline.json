@@ -1,8 +1,14 @@
 {
   "name": "feature-pipeline",
-  "version": "1.0",
-  "description": "Implement a full feature across all layers: schema → API → UI → tests → docs",
+  "version": "2.0",
+  "description": "Implement a full feature across all layers: schema → API → UI → tests → docs (with optional orchestrator synthesis)",
   "trigger_keywords": ["new feature", "full implementation", "end-to-end feature"],
+  "synthesizer": {
+    "agent": "orchestrator",
+    "enabled": false,
+    "prompt": "Synthesize the test results and documentation into a feature completion report. Verify test coverage meets requirements. Flag any gaps between implementation and documentation.",
+    "input_from": ["test_code", "docs"]
+  },
   "steps": [
     {
       "id": "schema",

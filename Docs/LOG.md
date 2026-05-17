@@ -343,4 +343,78 @@
 
 ---
 
+## 2026-05-17 16:00 UTC
+
+### Cambios realizados — Planificación v2.0
+
+- **v2.0 planificada**: tools_dynamic — CLI portable para analizar y potenciar cualquier proyecto con orquestación multi-agente
+- Creado `Docs/roadmaps/roadmap_v2.md` con road map completo de 5 fases
+- Creado `Docs/FASE-2.md` con documentación técnica detallada de cada fase y paso
+- Reordenadas las fases respecto a la propuesta inicial: Platform Adaptation (fase 1) pasa a ser la base del sistema
+- 4 plataformas objetivo desde el inicio: OpenCode, VS Code/GitHub Copilot, Claude Code, Antigravity
+- Investigada estructura de Claude Code: `CLAUDE.md`, `.claude/` (settings.json, skills, agents, rules, hooks, mcp.json)
+- Identificadas capacidades nativas por plataforma (subagentes, Agent Teams, hooks, MCP) para generación adaptativa de workflows
+- Diseñada arquitectura de `tools_dynamic/` con 4 scanners, 6 comandos CLI, sistema de templates, y generador adaptativo de workflows
+- CLI prioriza modo interactivo (inquirer) con dry-run y backup automático
+- Publicación planificada como paquete npm (`@opencode/tools-dynamic`)
+
+### Archivos creados
+
+- `Docs/roadmaps/roadmap_v2.md` — road map de v2.0 con 5 fases detalladas
+- `Docs/FASE-2.md` — documentación técnica completa de v2.0 (arquitectura, interfaces, algoritmos, templates)
+
+---
+
+## 2026-05-17 16:30 UTC
+
+### Cambios realizados — Estrategia híbrida pnpm + npm
+
+- Investigada crisis de seguridad npm 2025-2026 (Shai-Hulud: 796+ packages, 454,648 paquetes maliciosos en 2025)
+- Investigado pnpm v11 (abril 2026) y sus 3 capas de defensa supply chain: `strictDepBuilds`, `minimumReleaseAge`, `blockExoticSubdeps`
+- **Decisión**: Estrategia híbrida — pnpm para desarrollo/testing (seguridad), npm publish para release OIDC (madurez comprobada)
+- Actualizado `Docs/roadmaps/roadmap_v2.md` — Phase 5 expandida con justificación de seguridad y CI/CD híbrido
+- Actualizado `Docs/FASE-2.md` — Phase 5 reescrita con:
+  - `package.json` con `packageManager: "pnpm@11.0.0"` y `engines.node >= 22`
+  - `pnpm-workspace.yaml` con `allowBuilds` para seguridad
+  - CI/CD pipeline híbrido: `pnpm/action-setup` para test + `npm publish --provenance` para release
+  - Sección 5.4 con seguridad adicional recomendada (dependencias mínimas, provenance, SBOM)
+
+---
+
 *Modelo: opencode/deepseek-v4-flash-free*
+
+## 2026-05-17 17:00 UTC
+
+### Cambios realizados — Phase 0: Orchestrator Synthesis Enhancement
+
+- **Phase 0 completada**: El Orchestrator ahora tiene un rol real de síntesis al final de los workflows
+- **Nuevo estado `synthesis_pending`**: después de que todos los pasos regulares de un workflow se completan, el run puede entrar en `synthesis_pending` en lugar de `completed` directamente, si el workflow define un `synthesizer`
+- **Nuevas propiedades en workflow definitions**:
+  - `full-review-pipeline` (`v2.0`): synthesizer habilitado (`enabled: true`), orquestador sintetiza findings de code-reviewer, security-reviewer, perf-engineer
+  - `feature-pipeline` (`v2.0`): synthesizer opcional (`enabled: false`), configurable sin borrar
+  - `docs-generation` (`v2.0`): sin synthesizer (no lo necesita, doc-agent produce docs directamente)
+- **Executor actualizado** (`executor.mjs`):
+  - `synthesizeRun(runId)` — recolecta handoffs de todos los steps del synthesizer `input_from`, ejecuta `resolveConflicts()`, genera synthesis handoff, marca run como `completed`
+  - `skipSynthesis(runId)` — salta síntesis, marca run directamente como `completed`
+  - `resolveConflicts(handoffs)` — detecta riesgos duplicados entre agentes con severidades diferentes y los resuelve automáticamente (severidad mayor gana)
+  - `getSynthesisOutput()` — genera resumen de síntesis a partir de outputs recolectados
+  - Nuevo comando `--synthesize <run-id>` — ejecuta síntesis en un run `synthesis_pending`
+  - Nuevo comando `--skip-synthesis <run-id>` — salta síntesis y completa el run
+  - `--simulate` actualizado: después de todos los pasos, si synthesizer está enabled, entra en `synthesis_pending` → ejecuta `synthesizeRun()` → muestra conflictos resueltos
+  - `--complete-step` actualizado: si es el último step y hay synthesizer, muestra aviso
+  - `--status` actualizado: muestra estado del synthesizer en el resumen del run
+  - `--handoff` actualizado: muestra el synthesis handoff al final de la cadena, con conflictos resueltos
+
+### Archivos modificados
+
+- `tools/agent-workflows/executor.mjs` — synthesizer support completo (~50 líneas nuevas)
+- `tools/agent-workflows/definitions/full-review-pipeline.json` — v2.0 con synthesizer, synthesis step reemplazado por field
+- `tools/agent-workflows/definitions/feature-pipeline.json` — v2.0 con synthesizer opcional
+- `tools/agent-workflows/definitions/docs-generation.json` — v2.0 (solo bump de version)
+
+### Tests
+
+- 144/144 tests pass ✅
+- 9/9 agent metrics green 🟢
+- 3/3 workflows valid ✅
+- Submit + simulate de full-review-pipeline verifica synthesis end-to-end ✅

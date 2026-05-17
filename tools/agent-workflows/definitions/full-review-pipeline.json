@@ -1,8 +1,14 @@
 {
   "name": "full-review-pipeline",
-  "version": "1.0",
-  "description": "Review code for quality, security, performance, and generate documentation",
+  "version": "2.0",
+  "description": "Review code for quality, security, performance with orchestrator synthesis",
   "trigger_keywords": ["full review", "complete analysis", "audit codebase"],
+  "synthesizer": {
+    "agent": "orchestrator",
+    "enabled": true,
+    "prompt": "Synthesize the review findings from code-reviewer, security-reviewer, and perf-engineer into a unified report. Resolve any conflicting recommendations. Output: prioritized action items, auto-resolved conflicts, escalated decisions.",
+    "input_from": ["code_review", "security_review", "perf_review"]
+  },
   "steps": [
     {
       "id": "code_review",
@@ -24,13 +30,6 @@
       "prompt": "Review the code for performance bottlenecks, N+1 queries, caching opportunities, and bundle size issues.",
       "output_key": "perf_review",
       "depends_on": []
-    },
-    {
-      "id": "synthesis",
-      "agent": "doc-agent",
-      "prompt": "Synthesize the findings from code review, security review, and performance review into a unified report. Merge related findings, flag conflicts, and prioritize by severity.",
-      "output_key": "final_report",
-      "depends_on": ["code_review", "security_review", "perf_review"]
     }
   ]
 }
