@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "bash": true,
+    "read": true,
+    "write": true
+  },
+  "hooks": {
+    "PreToolUse": {"allowedTools": ["Read", "Bash", "Write"]}
+  },
+  "autoMemoryEnabled": true,
+  "skills": "all"
+}

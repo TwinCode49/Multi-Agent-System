@@ -418,3 +418,46 @@
 - 9/9 agent metrics green 🟢
 - 3/3 workflows valid ✅
 - Submit + simulate de full-review-pipeline verifica synthesis end-to-end ✅
+
+---
+
+*Modelo: opencode/deepseek-v4-flash-free*
+
+## 2026-05-17 18:00 UTC
+
+### Cambios realizados — Phase 1: Platform Adaptation & Scanner
+
+- **Creada estructura `tools_dynamic/`** con `scanners/`, `core/`, `tests/fixtures/`, `templates/`
+- **Tipos base**: `core/types.mjs` — `PlatformScanner` class + JSDoc typedefs (`PlatformScanResult`, `AgentDef`, `SkillDef`, `NativeCapabilities`)
+- **Parser**: `core/parser.mjs` — `parseFrontmatter()`, `parseMarkdownTable()`, `parseDispatchMatrix()`, `findFiles()`
+- **OpenCode Scanner** (`scanners/opencode-scanner.mjs`): detecta `.opencode/`, parsea `opencode.json`, `AGENTS.md`, agentes, skills, tools, workflows
+- **VS Code Scanner** (`scanners/vscode-scanner.mjs`): detecta `.github/`, parsea `copilot-instructions.md`, agentes en `.github/agents/`, skills en `.github/skills/`
+- **Claude Code Scanner** (`scanners/claude-scanner.mjs`): detecta `CLAUDE.md` y `.claude/`, parsea `settings.json`, agentes, skills, rules, `mcp.json`
+- **Antigravity Scanner** (`scanners/antigravity-scanner.mjs`): detecta `antigravity.yaml/json`, parsea YAML con parser propio
+- **Scanner Orchestrator** (`scanners/scanner.mjs`): `scan()`, `scanPrimary()`, `scanAll()` con prioridad opencode > vscode > claude > antigravity
+- `nativeCapabilities` por plataforma: Claude Code reporta true en subagents, agentTeams, parallelExecution, hooks, mcp, customTools; OpenCode solo customTools; VS Code y Antigravity todo false
+- **5 fixtures** de proyecto mock: opencode-project (3 agents, 1 skill, AGENTS.md, opencode.json), vscode-project, claude-project (con rules + mcp.json), antigravity-project (con YAML), vanilla-project
+- **42 tests**: opencode (10), vscode (7), claude (11), antigravity (7), orchestrator (7) — todos en `node:test`
+
+### Archivos creados
+
+- `tools_dynamic/core/types.mjs`
+- `tools_dynamic/core/parser.mjs`
+- `tools_dynamic/scanners/opencode-scanner.mjs`
+- `tools_dynamic/scanners/vscode-scanner.mjs`
+- `tools_dynamic/scanners/claude-scanner.mjs`
+- `tools_dynamic/scanners/antigravity-scanner.mjs`
+- `tools_dynamic/scanners/scanner.mjs`
+- `tools_dynamic/tests/opencode-scanner.test.mjs`
+- `tools_dynamic/tests/vscode-scanner.test.mjs`
+- `tools_dynamic/tests/claude-scanner.test.mjs`
+- `tools_dynamic/tests/antigravity-scanner.test.mjs`
+- `tools_dynamic/tests/scanner.test.mjs`
+- `tools_dynamic/tests/fixtures/` — 5 estructuras mock
+
+### Tests
+
+- tools_dynamic: 42/42 tests pass ✅
+- v1: 144/144 tests pass ✅
+- v1: 9/9 agent metrics green 🟢
+- v1: 3/3 workflows valid ✅

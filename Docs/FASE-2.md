@@ -1,7 +1,7 @@
 # Fase 2 — tools_dynamic: Portable Agent Orchestration System
 
 **Fecha:** 2026-05-17
-**Estado:** Planificada
+**Estado:** Phase 0 ✅ · Phase 1 ✅ · Phase 2–5 Planificadas
 
 ## Visión General
 
@@ -72,17 +72,15 @@ tools_dynamic/
 
 ---
 
-## Phase 0 🔄 — Orchestrator Synthesis Enhancement
+## Phase 0 ✅ — Orchestrator Synthesis Enhancement
 
 ### 0.1 Problema
 
-El Orchestrator tiene definido en su prompt (`.opencode/agents/orchestrator.md`) un `## Handoff Protocol` completo con:
-
-- **Parallel Handoff Coordination**: recolectar resultados de múltiples agentes, detectar conflictos
-- **Distributing Handoffs**: mergear contexto, enriquecer prompts para el siguiente agente
-- **Error Handling**: retry, partial results, timeout, conflict resolution
-
-Pero **nunca se ejecuta**. Los 3 workflows definidos terminan con `doc-agent` haciendo síntesis genérica, o simplemente ejecutan pasos secuenciales sin un coordinador central.
+✅ Resuelto. El Orchestrator ahora ejecuta `## Handoff Protocol` real:
+- **Parallel Handoff Coordination**: recolecta resultados de múltiples agentes, detecta conflictos via `resolveConflicts()`
+- **Distributing Handoffs**: mergea contexto en el synthesis handoff
+- **Error Handling**: la síntesis fallida marca el run completo como `failed`
+- Los 3 workflows están actualizados: `full-review-pipeline` usa synthesizer habilitado, `feature-pipeline` opcional, `docs-generation` no lo necesita
 
 ### 0.2 Solución
 

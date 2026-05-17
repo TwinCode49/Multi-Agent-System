@@ -1,0 +1,14 @@
+version: "1.0"
+agents:
+  database-specialist:
+    role: Database specialist
+    mode: subagent
+  test-engineer:
+    role: Test engineer
+    mode: subagent
+skills:
+  - database
+  - testing
+tools:
+  - agent-testing
+  - agent-metrics

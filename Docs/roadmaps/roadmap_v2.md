@@ -3,6 +3,8 @@
 > **Versión**: 2.0
 > **Estado**: Planificado
 > **Última revisión**: 2026-05-17
+> **Fase 0**: ✅ Completada
+> **Fase 1**: ✅ Completada
 
 ## Visión General
 
@@ -20,11 +22,11 @@ v1: Construir el ecosistema (skills, agentes, workflows, tools)
           (Handoff Protocol, synthesis, conflict resolution son código muerto)
      │
      ▼
-v2 Phase 0: Revivir el Orchestrator
+v2 Phase 0: Revivir el Orchestrator ✅
      │
-     ├── Synthesis step opcional en workflows
-     ├── Handoff Protocol se vuelve real
-     └── Resolución de conflictos con IA
+     ├── Synthesis step opcional en workflows ✓
+     ├── Handoff Protocol se vuelve real ✓
+     └── Resolución de conflictos con IA ✓
      │
      ▼
 v2: Empaquetar el ecosistema para inyectarlo en otros proyectos
@@ -37,25 +39,25 @@ v2: Empaquetar el ecosistema para inyectarlo en otros proyectos
           └── doctor    → diagnostica configuraciones existentes
 ```
 
-## Phase 0 🔄 — Orchestrator Synthesis Enhancement
+## Phase 0 ✅ — Orchestrator Synthesis Enhancement
 
 Revivir el Orchestrator dándole un rol real en los workflows. Actualmente tiene definido un `## Handoff Protocol` completo con Parallel Handoff Coordination, Distributing Handoffs, y Error Handling — pero nunca se ejecuta porque los workflows lo saltan.
 
 ### Problema
-- [>] Orchestrator tiene Handoff Protocol definido pero no se usa
-- [>] Workflows terminan en doc-agent (síntesis genérica) en lugar de un coordinador con criterio
-- [>] No hay resolución de conflictos entre agentes (si code-reviewer y security-reviewer discrepan, no hay quien decida)
+- [x] Orchestrator tiene Handoff Protocol definido pero no se usa
+- [x] Workflows terminan en doc-agent (síntesis genérica) en lugar de un coordinador con criterio
+- [x] No hay resolución de conflictos entre agentes (si code-reviewer y security-reviewer discrepan, no hay quien decida)
 
 ### Solución
-- [ ] Añadir campo `synthesizer` opcional en los workflow definitions JSON
-- [ ] `synthesizer.agent: "orchestrator"` — paso final que recibe todos los handoffs y produce síntesis
-- [ ] `synthesizer.input_from` — qué pasos alimentan la síntesis (por defecto: todos)
-- [ ] Nuevo comando `--synthesize <run-id>` en executor.mjs
-- [ ] Nuevo estado `synthesis_pending` — después de que todos los steps se completan, el run espera síntesis
-- [ ] `--simulate` auto-completa síntesis con mock data
-- [ ] `--handoff` muestra la síntesis como paso final en la cadena
-- [ ] Actualizar los 3 workflows existentes para incluir synthesizer donde tenga sentido
-- [ ] Actualizar `Docs/processes/agentes/agent-handoff.md` — documentar el paso de síntesis
+- [x] Añadir campo `synthesizer` opcional en los workflow definitions JSON
+- [x] `synthesizer.agent: "orchestrator"` — paso final que recibe todos los handoffs y produce síntesis
+- [x] `synthesizer.input_from` — qué pasos alimentan la síntesis (por defecto: todos)
+- [x] Nuevo comando `--synthesize <run-id>` en executor.mjs
+- [x] Nuevo estado `synthesis_pending` — después de que todos los steps se completan, el run espera síntesis
+- [x] `--simulate` auto-completa síntesis con mock data
+- [x] `--handoff` muestra la síntesis como paso final en la cadena
+- [x] Actualizar los 3 workflows existentes para incluir synthesizer donde tenga sentido
+- [x] Actualizar `Docs/processes/agentes/agent-handoff.md` — documentar el paso de síntesis
 
 ### Workflows actualizados
 | Workflow | Síntesis | Agente | Entrada |
@@ -64,25 +66,25 @@ Revivir el Orchestrator dándole un rol real en los workflows. Actualmente tiene
 | `feature-pipeline` | Opcional (merge test + docs) | orchestrator | test_code, docs |
 | `full-review-pipeline` | Sí (reemplaza doc-agent synthesis) | orchestrator | code_review, security_review, perf_review |
 
-**Entregable**: Executor con síntesis por Orchestrator + 3 workflows actualizados + documentación
+**Entregable**: Executor con síntesis por Orchestrator + 3 workflows actualizados + documentación ✅
 
 ---
 
-## Phase 1 🏗️ — Platform Adaptation & Scanner
+## Phase 1 ✅ — Platform Adaptation & Scanner
 
 Diseñar e implementar los detectores multi-plataforma que son la base de todo el sistema.
 
-- [ ] Definir interfaz unificada `PlatformScanner` y `PlatformScanResult`
-- [ ] Implementar `opencode-scanner.mjs` — detecta `.opencode/`, `AGENTS.md`, `opencode.json`
-- [ ] Implementar `vscode-scanner.mjs` — detecta `.github/copilot-instructions.md`, `.github/agents/`
-- [ ] Implementar `claude-scanner.mjs` — detecta `CLAUDE.md`, `.claude/` (skills, agents, rules, settings.json, hooks, mcp.json)
-- [ ] Implementar `antigravity-scanner.mjs` — detecta `antigravity.yaml/json`
-- [ ] Implementar `scanner.mjs` (orquestador de todos los scanners)
-- [ ] `nativeCapabilities` detection: subagentes nativos, Agent Teams, hooks, MCP, ejecución paralela
-- [ ] Tests unitarios para cada scanner con fixtures de proyectos mock
-- [ ] Documentar estructura esperada de cada plataforma
+- [x] Definir interfaz unificada `PlatformScanner` y `PlatformScanResult`
+- [x] Implementar `opencode-scanner.mjs` — detecta `.opencode/`, `AGENTS.md`, `opencode.json`
+- [x] Implementar `vscode-scanner.mjs` — detecta `.github/copilot-instructions.md`, `.github/agents/`
+- [x] Implementar `claude-scanner.mjs` — detecta `CLAUDE.md`, `.claude/` (skills, agents, rules, settings.json, hooks, mcp.json)
+- [x] Implementar `antigravity-scanner.mjs` — detecta `antigravity.yaml/json`
+- [x] Implementar `scanner.mjs` (orquestador de todos los scanners)
+- [x] `nativeCapabilities` detection: subagentes nativos, Agent Teams, hooks, MCP, ejecución paralela
+- [x] Tests unitarios para cada scanner con fixtures de proyectos mock
+- [x] Documentar estructura esperada de cada plataforma
 
-**Entregable**: 4 scanners funcionales + interfaz unificada + tests
+**Entregable**: 4 scanners funcionales + interfaz unificada + tests ✅
 
 ## Phase 2 ⚙️ — Core Engine
 
