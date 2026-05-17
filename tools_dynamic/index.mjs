@@ -170,7 +170,7 @@ program
         results = [makeSyntheticResult(platformName, targetPath)];
         console.log(`  ${CYAN}ℹ️  Using platform: ${platformName}${RESET}\n`);
       }
-      const defaultComponents = ['config', 'testing', 'metrics', 'workflows', 'processes'];
+      const defaultComponents = ['config', 'testing', 'metrics', 'workflows', 'processes', 'context'];
       console.log(`  ${CYAN}⚡ Non-interactive mode: injecting with defaults...${RESET}\n`);
       const plan = injector.plan(results, targetPath, defaultComponents);
       const executeResult = injector.execute(plan, targetPath, {
@@ -219,6 +219,7 @@ program
         { name: '📊 Agent Performance Metrics (report.mjs)', value: 'metrics', checked: true },
         { name: '⚡ Multi-Agent Workflows (definitions + executor)', value: 'workflows', checked: true },
         { name: '📋 Docs/Processes (documentation templates)', value: 'processes', checked: false },
+        { name: '🧠 Context Manager (token estimation + compaction tool)', value: 'context', checked: true },
       ],
     }]);
 
@@ -282,6 +283,7 @@ program
   .option('--config', 'Inject agent/skill/config definitions only')
   .option('--tools', 'Inject tools only (testing + metrics + workflows)')
   .option('--processes', 'Inject processes only')
+  .option('--context', 'Inject context-manager tool')
   .option('--all', 'Inject everything (default)')
   .action(async (path, options) => {
     const targetPath = path || '.';

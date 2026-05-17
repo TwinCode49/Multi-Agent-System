@@ -29,8 +29,11 @@ export async function runInject(targetPath, options) {
   if (options.processes || options.all) {
     components.push('processes');
   }
+  if (options.context || options.all) {
+    components.push('context');
+  }
   if (components.length === 0) {
-    components.push('config', 'testing', 'metrics', 'workflows', 'processes');
+    components.push('config', 'testing', 'metrics', 'workflows', 'processes', 'context');
   }
 
   console.log(`\n  ${BOLD}🔧 Generating injection plan...${RESET}\n`);

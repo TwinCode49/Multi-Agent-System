@@ -1,5 +1,87 @@
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, basename, dirname } from 'path';
+
+function readFileSafe(filePath) {
+  try { return readFileSync(filePath, 'utf-8'); } catch { return null; }
+}
+
+function parseAgentFromMd(filePath, content) {
+  const { frontmatter, body } = Parser.parseFrontmatter(content);
+  const fmName = frontmatter.name || frontmatter.role || basename(filePath, '.md');
+  return {
+    name: fmName,
+    role: frontmatter.description || frontmatter.role || '',
+    keywords: [],
+    mode: frontmatter.mode === 'primary' ? 'primary' : 'subagent',
+    filePath,
+    permissions: { edit: frontmatter.permission?.edit || frontmatter.edit || 'allow', bash: frontmatter.permission?.bash || frontmatter.bash || 'allow' },
+    sections: body.split('\n').filter(l => l.startsWith('## ')).map(l => l.replace(/^##\s+/, '').trim()),
+    hasHandoff: body.includes('Handoff Protocol'),
+  };
+}
+
+function parseSkillFromDir(skillDir) {
+  const skillPath = join(skillDir, 'SKILL.md');
+  const content = readFileSafe(skillPath);
+  if (!content) return null;
+  const { frontmatter } = Parser.parseFrontmatter(content);
+  const refsDir = join(skillDir, 'references');
+  return {
+    name: frontmatter.name || basename(skillDir),
+    keywords: [],
+    filePath: skillPath,
+    references: existsSync(refsDir) ? readdirSync(refsDir).filter(f => f.endsWith('.md')).map(f => join(refsDir, f)) : [],
+    crossPlatformSynced: false,
+  };
+}
+
+export function scanDotAgent(basePath) {
+  const agentDir = join(basePath, '.agent');
+  if (!existsSync(agentDir)) return { agents: [], skills: [] };
+
+  const agents = [];
+  const skills = [];
+
+  const rulesDir = join(agentDir, 'rules');
+  if (existsSync(rulesDir)) {
+    const entries = readdirSync(rulesDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const skill = parseSkillFromDir(join(rulesDir, entry.name));
+        if (skill && !skills.some(s => s.name === skill.name)) skills.push(skill);
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        const content = readFileSafe(join(rulesDir, entry.name));
+        if (content) agents.push(parseAgentFromMd(join(rulesDir, entry.name), content));
+      }
+    }
+  }
+
+  const nativeAgentsDir = join(agentDir, 'agents');
+  if (existsSync(nativeAgentsDir)) {
+    const entries = readdirSync(nativeAgentsDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isFile() && entry.name.endsWith('.md')) {
+        const name = basename(entry.name, '.md');
+        if (agents.some(a => a.name === name)) continue;
+        const content = readFileSafe(join(nativeAgentsDir, entry.name));
+        if (content) agents.push(parseAgentFromMd(join(nativeAgentsDir, entry.name), content));
+      }
+    }
+  }
+
+  const skillsDir = join(agentDir, 'skills');
+  if (existsSync(skillsDir)) {
+    const entries = readdirSync(skillsDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const skill = parseSkillFromDir(join(skillsDir, entry.name));
+        if (skill && !skills.some(s => s.name === skill.name)) skills.push(skill);
+      }
+    }
+  }
+
+  return { agents, skills };
+}
 
 export class Parser {
   static parseFrontmatter(content) {

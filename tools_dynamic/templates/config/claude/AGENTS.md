@@ -18,6 +18,7 @@ When a user request matches any trigger keyword, the primary agent MUST dispatch
 | deploy, CI/CD, pipeline, docker, kubernetes, release, infra, terraform, helm | @devops-agent | auto |
 | review, PR, code-quality, lint, style, refactor, standards, best-practices | @code-reviewer | auto |
 | UI, UX, component, layout, responsive, styling, accessibility, design-system, theme | @ui-specialist | auto |
+| context, token, compact, summarize, window, limit, usage, memory, conversation, history | @context-steward | auto |
 
 ## Auto-Dispatch Rules
 

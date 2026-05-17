@@ -54,4 +54,59 @@ describe('AntigravityScanner', () => {
     assert.equal(result.nativeCapabilities.mcp, false);
     assert.equal(result.nativeCapabilities.customTools, false);
   });
+
+  test('detect returns true for antigravity rules dir project', () => {
+    const scanner = new AntigravityScanner();
+    assert.equal(scanner.detect(join(fixturesDir, 'antigravity-rules-project')), true);
+  });
+
+  test('scan discovers agents from .agent/rules/ .md files', () => {
+    const scanner = new AntigravityScanner();
+    const result = scanner.scan(join(fixturesDir, 'antigravity-rules-project'));
+    assert.ok(result.agents.length >= 2);
+    assert.ok(result.agents.some(a => a.name === 'general'));
+    assert.ok(result.agents.some(a => a.name === 'database-specialist'));
+  });
+
+  test('scan discovers skills from .agent/rules/ subdirectories with SKILL.md', () => {
+    const scanner = new AntigravityScanner();
+    const result = scanner.scan(join(fixturesDir, 'antigravity-rules-project'));
+    assert.ok(result.skills.length >= 2);
+    assert.ok(result.skills.some(s => s.name === 'testing'));
+    assert.ok(result.skills.some(s => s.name === 'general'));
+  });
+
+  test('scan discovers skill references from .agent/rules/', () => {
+    const scanner = new AntigravityScanner();
+    const result = scanner.scan(join(fixturesDir, 'antigravity-rules-project'));
+    const testingSkill = result.skills.find(s => s.name === 'testing');
+    assert.ok(testingSkill);
+    assert.ok(testingSkill.references.length >= 1);
+  });
+
+  test('scan returns configPaths containing .agent/', () => {
+    const scanner = new AntigravityScanner();
+    const result = scanner.scan(join(fixturesDir, 'antigravity-rules-project'));
+    assert.ok(result.configPaths.some(p => p.includes('.agent')));
+  });
+
+  test('scan discovers agents from .agent/agents/', () => {
+    const scanner = new AntigravityScanner();
+    const result = scanner.scan(join(fixturesDir, 'antigravity-rules-project'));
+    assert.ok(result.agents.some(a => a.name === 'deployment'));
+  });
+
+  test('scan discovers skills from .agent/skills/', () => {
+    const scanner = new AntigravityScanner();
+    const result = scanner.scan(join(fixturesDir, 'antigravity-rules-project'));
+    assert.ok(result.skills.some(s => s.name === 'logging'));
+  });
+
+  test('scan discovers skill references from .agent/skills/', () => {
+    const scanner = new AntigravityScanner();
+    const result = scanner.scan(join(fixturesDir, 'antigravity-rules-project'));
+    const logSkill = result.skills.find(s => s.name === 'logging');
+    assert.ok(logSkill);
+    assert.ok(logSkill.references.length >= 1);
+  });
 });

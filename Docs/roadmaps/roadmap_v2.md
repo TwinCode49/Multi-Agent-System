@@ -9,6 +9,8 @@
 > **Fase 3**: ✅ Completada
 > **Fase 4**: ✅ Completada
 > **Fase 5**: ✅ Completada
+> **Fase 5.5**: ✅ Completada
+> **Fase 5.6**: ✅ Completada
 
 ## Visión General
 
@@ -190,6 +192,103 @@ Transformar el dashboard demo (datos fake con `Random`) en un **panel de métric
 - [x] Chart.js integrado para visualizaciones (health donut + tests donut)
 
 **Entregable**: Nexus Dashboard conectado a datos reales de agents/skills/tests/workflows ✅
+
+---
+
+## Phase 5.5 🧠 — Context Manager: Token Estimation & Auto-Compaction
+
+Implementar un sistema multi-capa de gestión de contexto LLM que monitorea la utilización de tokens, dispara compactación automática antes de ejecutar prompts, y funciona en todas las plataformas (OpenCode, VS Code, Claude Code, Antigravity).
+
+### Problema
+- [x] No existía forma de estimar el uso de contexto del LLM en plataformas que no lo exponen nativamente
+- [x] OpenCode compacta automáticamente, pero VS Code, Claude Code y Antigravity no tienen este mecanismo
+- [x] No había un agente dedicado a la gestión de contexto ni un skill que documente las estrategias
+- [x] Los workflows no verificaban contexto antes de ejecutar pasos multi-agente
+
+### Solución (Arquitectura Multi-Capa)
+
+**Tool** (`tools/context-manager/estimate.mjs`):
+- [x] Escanea agentes y skills, estima tokens (ratio ~4 chars/token)
+- [x] `--check`: chequeo rápido, exit code 1 si > 95%
+- [x] `--save`: guarda reporte JSON en `reports/`
+- [x] `--model`: especificar modelo para límite de contexto
+- [x] `--json`: salida JSON para integración programática
+- [x] Modelos soportados: GPT-4, Claude 3/3.5/4, Gemini 1.5/2.0, DeepSeek, Llama, Mistral, Qwen
+
+**Agent** (`context-steward.md`):
+- [x] Nuevo agente: `@context-steward` — monitorea, estima y compacta
+- [x] Frontmatter: TRIGGER KEYWORDS (context, token, compact, summarize, window, limit, ...)
+- [x] Core Responsibilities: estimación, monitoreo de umbrales, ejecución de compactación
+- [x] Behavior Rules: chequeo pre-ejecución, umbrales 80%/95%, priorización de pruning
+- [x] Handoff Protocol: reporta % de contexto, acciones tomadas, headroom restante
+
+**Skill** (`context-management`):
+- [x] Tabla de límites de contexto por familia de modelos
+- [x] Umbrales: Safe (<50%), Elevated (50-80%), Warning (80-95%), Critical (>95%)
+- [x] Estrategias de compactación: Summarization, Pruning, Consolidation
+- [x] Notas por plataforma: qué plataformas tienen auto-compact nativo
+- [x] Referencia: `references/platform-limits.md`
+
+**Orquestador actualizado**:
+- [x] Context-Aware Dispatch: paso 2 del workflow del orquestador
+- [x] Si contexto > 95% → stall hasta compactar
+- [x] Si contexto > 80% → compactar antes de tareas largas
+- [x] Siempre verificar contexto antes de workflows multi-agente
+
+**Dispatch Matrix actualizada** (4 plataformas):
+- [x] OpenCode AGENTS.md: nueva fila `context, token, compact... → @context-steward`
+- [x] Antigravity AGENTS.md: ídem
+- [x] VS Code AGENTS.md: ídem
+- [x] Claude Code AGENTS.md: ídem
+
+**Workflows con pre-step de contexto**:
+- [x] `executor.mjs`: `checkContextBeforeSubmit()` antes de aceptar un workflow
+- [x] `run.mjs`: muestra estado de contexto al inicio de la validación
+- [x] Context check stalla submission si headroom insuficiente
+
+**Injection**:
+- [x] Nuevo componente `context` en `injector.mjs`
+- [x] `--context` flag en `inject` command
+- [x] `context` incluido por defecto en `init --yes` y en interactivo (checked)
+- [x] Templates de context-manager tool inyectados como `tools/context-manager/estimate.mjs`
+
+**Documentación**:
+- [x] `Docs/processes/tools-dynamic/context-management.md` — descripción, componentes, arquitectura, umbrales, uso, plataformas
+
+**Entregable**: Sistema multi-capa de gestión de contexto con tool, agente, skill, orquestador actualizado, dispatch matrix expandida, workflows conscientes de contexto, y documentación completa. ✅
+
+---
+
+## Phase 5.6 🔄 — Cross-Platform `.agent/` Convention
+
+Implementar el directorio `.agent/` como convención transversal detectada por todos los scanners, unificando la discovery de agents y skills bajo una estructura común independientemente de la plataforma.
+
+### Problema
+- [x] Solo `AntigravityScanner` detectaba `.agent/rules/`; OpenCode, VSCode y Claude ignoraban esta estructura
+- [x] Proyectos que migraban entre plataformas (ej: Antigravity → OpenCode) perdían la visibilidad de sus agents/skills existentes
+- [x] No había una convención compartida para depositar agents/skills independiente de la plataforma
+
+### Solución
+
+**Función compartida** `scanDotAgent(basePath)` en `core/parser.mjs`:
+- [x] Escanea `.agent/rules/*.md` → agents (parsea frontmatter YAML con name, description, mode, permissions)
+- [x] Escanea `.agent/agents/*.md` → agents (con dedup por nombre contra rules/ y platform native)
+- [x] Escanea `.agent/rules/*/SKILL.md` y `.agent/skills/*/SKILL.md` → skills (con referencias)
+- [x] Retorna `{ agents: [], skills: [] }`, no toca nada si no existe `.agent/`
+
+**Scanners actualizados** (los 4):
+- [x] `OpenCodeScanner` — importa y llama `scanDotAgent()` al final de `scan()`
+- [x] `VSCodeScanner` — ídem
+- [x] `ClaudeScanner` — ídem
+- [x] `AntigravityScanner` — reemplazadas funciones custom `scanAgentsFromRules`/`scanSkillsFromRules` por `scanDotAgent()`
+- [x] `detect()` de Antigravity expandido: ahora también detecta `.agent/agents/` y `.agent/skills/`
+
+**Tests** (19 nuevos, total 135):
+- [x] Fixtures: `.agent/` con rules, agents, skills y referencias en opencode, vscode, claude, antigravity-rules-project
+- [x] Vanilla fixture permanece sin `.agent/` (no interfiere)
+- [x] `scanner.test.mjs` actualizado: opencode-project ahora es multi-plataforma (opencode + antigravity)
+
+**Entregable**: `.agent/` como convención cross-platform detectada por todos los scanners, con tests que verifican agents desde 3 fuentes (rules/, agents/, skills/) en las 4 plataformas. ✅
 
 ---
 

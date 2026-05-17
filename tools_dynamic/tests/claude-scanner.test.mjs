@@ -86,4 +86,30 @@ describe('ClaudeScanner', () => {
     assert.ok(result.configPaths.some(p => p.endsWith('settings.json')));
     assert.ok(result.configPaths.some(p => p.endsWith('mcp.json')));
   });
+
+  test('scan discovers agents from .agent/rules/', () => {
+    const scanner = new ClaudeScanner();
+    const result = scanner.scan(join(fixturesDir, 'claude-project'));
+    assert.ok(result.agents.some(a => a.name === 'reviewer'));
+  });
+
+  test('scan discovers skills from .agent/skills/', () => {
+    const scanner = new ClaudeScanner();
+    const result = scanner.scan(join(fixturesDir, 'claude-project'));
+    assert.ok(result.skills.some(s => s.name === 'security'));
+  });
+
+  test('scan discovers skill references from .agent/skills/', () => {
+    const scanner = new ClaudeScanner();
+    const result = scanner.scan(join(fixturesDir, 'claude-project'));
+    const secSkill = result.skills.find(s => s.name === 'security');
+    assert.ok(secSkill);
+    assert.ok(secSkill.references.length >= 1);
+  });
+
+  test('scan includes .agent in configPaths', () => {
+    const scanner = new ClaudeScanner();
+    const result = scanner.scan(join(fixturesDir, 'claude-project'));
+    assert.ok(result.configPaths.some(p => p.includes('.agent')));
+  });
 });

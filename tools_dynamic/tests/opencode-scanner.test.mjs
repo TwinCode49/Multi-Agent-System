@@ -81,4 +81,36 @@ describe('OpenCodeScanner', () => {
     assert.ok(result.configPaths.some(p => p.endsWith('opencode.json')));
     assert.ok(result.configPaths.some(p => p.endsWith('AGENTS.md')));
   });
+
+  test('scan discovers agents from .agent/rules/', () => {
+    const scanner = new OpenCodeScanner();
+    const result = scanner.scan(join(fixturesDir, 'opencode-project'));
+    assert.ok(result.agents.some(a => a.name === 'architect'));
+  });
+
+  test('scan discovers agents from .agent/agents/', () => {
+    const scanner = new OpenCodeScanner();
+    const result = scanner.scan(join(fixturesDir, 'opencode-project'));
+    assert.ok(result.agents.some(a => a.name === 'security-specialist'));
+  });
+
+  test('scan discovers skills from .agent/skills/', () => {
+    const scanner = new OpenCodeScanner();
+    const result = scanner.scan(join(fixturesDir, 'opencode-project'));
+    assert.ok(result.skills.some(s => s.name === 'cli-tooling'));
+  });
+
+  test('scan discovers skill references from .agent/skills/', () => {
+    const scanner = new OpenCodeScanner();
+    const result = scanner.scan(join(fixturesDir, 'opencode-project'));
+    const cliSkill = result.skills.find(s => s.name === 'cli-tooling');
+    assert.ok(cliSkill);
+    assert.ok(cliSkill.references.length >= 1);
+  });
+
+  test('scan includes .agent in configPaths', () => {
+    const scanner = new OpenCodeScanner();
+    const result = scanner.scan(join(fixturesDir, 'opencode-project'));
+    assert.ok(result.configPaths.some(p => p.includes('.agent')));
+  });
 });

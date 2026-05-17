@@ -1,6 +1,117 @@
 ---
 *Modelo: opencode/deepseek-v4-flash-free*
 
+## 2026-05-17 Phase 5.6 — Cross-Platform `.agent/` Convention
+
+### Cambios
+
+- **Nueva función compartida** `scanDotAgent(basePath)` en `core/parser.mjs`:
+  - Escanea `.agent/rules/*.md` → agents (con frontmatter parsing)
+  - Escanea `.agent/agents/*.md` → agents (dedup por nombre vs rules y nativos)
+  - Escanea `.agent/rules/*/SKILL.md` y `.agent/skills/*/SKILL.md` → skills (con referencias)
+  - Retorna vacío si no existe `.agent/`, mergea sin duplicar
+
+- **OpenCodeScanner**: importa `scanDotAgent`, llama al final de `scan()`. Ahora detecta agents/skills de `.agent/` además de `.opencode/`.
+
+- **VSCodeScanner**: ídem, además de `.github/`.
+
+- **ClaudeScanner**: ídem, además de `.claude/` y `CLAUDE.md`.
+
+- **AntigravityScanner**: simplificado — eliminadas funciones `scanAgentsFromRules`, `scanSkillsFromRules`, `RULES_DIR`, `hasRulesDir`. Reemplazadas por `scanDotAgent()`. `detect()` expandido para incluir `.agent/agents/` y `.agent/skills/`.
+
+- **Tests**: 19 nuevos (total 135). Fixtures actualizados con estructura `.agent/` en opencode, vscode, claude, antigravity-rules-project. Vanilla fixture limpio.
+
+- **Scanner orchestrator test**: opencode-project ahora es multi-plataforma (opencode + antigravity vía .agent/)
+
+### Archivos modificados
+
+- `core/parser.mjs` — nueva función `scanDotAgent()` exportada
+- `scanners/opencode-scanner.mjs` — importa y usa `scanDotAgent`
+- `scanners/vscode-scanner.mjs` — ídem
+- `scanners/claude-scanner.mjs` — ídem
+- `scanners/antigravity-scanner.mjs` — simplificado, usa `scanDotAgent` en lugar de funciones custom
+- `tests/scanner.test.mjs` — opencode-project espera 2 platforms
+- `Docs/roadmaps/roadmap_v2.md` — Phase 5.6 agregada
+- `Docs/logs/LOG_v2.md` — este entry
+
+### Archivos de test creados
+
+- `tests/fixtures/opencode-project/.agent/rules/architect.md`
+- `tests/fixtures/opencode-project/.agent/agents/security-specialist.md`
+- `tests/fixtures/opencode-project/.agent/skills/cli-tooling/{SKILL.md, references/patterns.md}`
+- `tests/fixtures/vscode-project/.agent/rules/formatting.md`
+- `tests/fixtures/claude-project/.agent/rules/reviewer.md`
+- `tests/fixtures/claude-project/.agent/skills/security/{SKILL.md, references/owasp.md}`
+- `tests/fixtures/antigravity-rules-project/.agent/agents/deployment.md`
+- `tests/fixtures/antigravity-rules-project/.agent/skills/logging/{SKILL.md, references/best-practices.md}`
+
+## 2026-05-17 Phase 5.5 — Context Manager: Token Estimation & Auto-Compaction
+
+### Cambios
+
+- **Nuevo tool**: `templates/tools/context-manager/estimate.mjs`
+  - Escanea agentes y skills, estima tokens (~4 chars/token)
+  - Flags: `--check`, `--save`, `--model`, `--json`
+  - Modelos soportados: GPT-4, Claude, Gemini, DeepSeek, Llama, Mistral, Qwen
+  - Exit code 1 si contexto > 95% (útil para CI/gating)
+
+- **Nuevo agente**: `templates/config/agents-skills/agents/context-steward.md`
+  - `@context-steward` — monitorea contexto, compacta cuando es necesario
+  - TRIGGER KEYWORDS: context, token, compact, summarize, window, limit, usage, memory, conversation, history
+  - Edit: allow, bash: allow, con skill path a context-management
+
+- **Nuevo skill**: `templates/config/agents-skills/skills/context-management/`
+  - `SKILL.md` — estrategias de compactación, umbrales, notas por plataforma
+  - `references/platform-limits.md` — límites de contexto por modelo y plataforma
+
+- **Orquestador actualizado**: Context-Aware Dispatch agregado como paso 2 del workflow
+  - > 95% → stall hasta compactar
+  - > 80% → compactar antes de tareas largas
+
+- **Dispatch Matrix actualizada** en las 4 plataformas:
+  - `templates/config/opencode/AGENTS.md`
+  - `templates/config/antigravity/AGENTS.md`
+  - `templates/config/vscode/AGENTS.md`
+  - `templates/config/claude/AGENTS.md`
+  - Nueva fila: `context, token, compact... → @context-steward`
+
+- **Workflows con pre-step de contexto**:
+  - `executor.mjs`: `checkContextBeforeSubmit()` — verifica headroom antes de aceptar workflows
+  - `run.mjs`: muestra estado de contexto al inicio de validación
+  - Stalla submission si headroom insuficiente para los pasos del workflow
+
+- **Injection**:
+  - `core/injector.mjs`: nuevo componente `context` inyecta `tools/context-manager/`
+  - `index.mjs`: `context` incluido por defecto en `init --yes` e interactivo
+  - `commands/inject.mjs`: nuevo flag `--context`
+
+- **Documentación**: `Docs/processes/tools-dynamic/context-management.md`
+
+- **Roadmap**: Phase 5.5 agregada con checklist completo `[x]` entre Phase 5 y Phase 6
+
+### Archivos creados
+
+- `templates/tools/context-manager/estimate.mjs`
+- `templates/config/agents-skills/agents/context-steward.md`
+- `templates/config/agents-skills/skills/context-management/SKILL.md`
+- `templates/config/agents-skills/skills/context-management/references/platform-limits.md`
+- `Docs/processes/tools-dynamic/context-management.md`
+
+### Archivos modificados
+
+- `templates/config/opencode/AGENTS.md` — nueva fila context-steward en dispatch matrix
+- `templates/config/antigravity/AGENTS.md` — ídem
+- `templates/config/vscode/AGENTS.md` — ídem
+- `templates/config/claude/AGENTS.md` — ídem
+- `templates/config/agents-skills/agents/orchestrator.md` — Context-Aware Dispatch agregado
+- `templates/tools/agent-workflows/executor.mjs` — checkContextBeforeSubmit() + import execSync
+- `templates/tools/agent-workflows/run.mjs` — context check al inicio
+- `core/injector.mjs` — nuevo componente `context`
+- `index.mjs` — context en defaults y checklist
+- `commands/inject.mjs` — flag `--context`
+- `Docs/roadmaps/roadmap_v2.md` — Phase 5.5 agregada
+- `Docs/logs/LOG_v2.md` — este entry
+
 ## 2026-05-17 Phase 5 — Nexus Dashboard: Live Agent Metrics
 
 ### Cambios

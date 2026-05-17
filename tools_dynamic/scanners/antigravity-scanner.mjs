@@ -1,6 +1,7 @@
-import { join, basename } from 'path';
+import { join, basename, dirname } from 'path';
+import { readdirSync, existsSync, statSync } from 'fs';
 import { PlatformScanner } from '../core/types.mjs';
-import { Parser } from '../core/parser.mjs';
+import { Parser, scanDotAgent } from '../core/parser.mjs';
 
 export function parseSimpleYaml(content) {
   const result = {};
@@ -102,7 +103,11 @@ export class AntigravityScanner extends PlatformScanner {
   static platformName = 'antigravity';
 
   detect(basePath) {
-    return Parser.exists(join(basePath, 'antigravity.yaml')) || Parser.exists(join(basePath, 'antigravity.json'));
+    return Parser.exists(join(basePath, 'antigravity.yaml'))
+      || Parser.exists(join(basePath, 'antigravity.json'))
+      || Parser.exists(join(basePath, '.agent', 'rules'))
+      || Parser.exists(join(basePath, '.agent', 'agents'))
+      || Parser.exists(join(basePath, '.agent', 'skills'));
   }
 
   scan(basePath) {
@@ -178,6 +183,25 @@ export class AntigravityScanner extends PlatformScanner {
       if (config.tools && Array.isArray(config.tools)) {
         result.existingTools = config.tools;
       }
+    }
+
+    const dotAgent = scanDotAgent(basePath);
+    for (const agent of dotAgent.agents) {
+      if (!result.agents.some(a => a.name === agent.name)) {
+        result.agents.push(agent);
+      }
+    }
+    for (const skill of dotAgent.skills) {
+      if (!result.skills.some(s => s.name === skill.name)) {
+        result.skills.push(skill);
+      }
+    }
+    if (dotAgent.agents.length > 0 || dotAgent.skills.length > 0) {
+      const dotAgentDir = join(basePath, '.agent');
+      if (!result.configPaths.some(p => p === dotAgentDir || p.startsWith(dotAgentDir + '\\') || p.startsWith(dotAgentDir + '/'))) {
+        result.configPaths.push(dotAgentDir);
+      }
+      result.platformMeta.agentDiscovery = config ? 'yaml+rules' : 'rules';
     }
 
     return result;

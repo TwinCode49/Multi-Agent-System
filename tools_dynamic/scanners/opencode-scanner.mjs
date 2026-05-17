@@ -1,7 +1,7 @@
 import { join, basename, dirname } from 'path';
 import { existsSync } from 'fs';
 import { PlatformScanner } from '../core/types.mjs';
-import { Parser } from '../core/parser.mjs';
+import { Parser, scanDotAgent } from '../core/parser.mjs';
 
 function parseKeywords(value) {
   if (Array.isArray(value)) return value.map(k => k.toLowerCase().trim());
@@ -115,6 +115,18 @@ export class OpenCodeScanner extends PlatformScanner {
           filePath: wfPath,
         });
       } catch { }
+    }
+
+    const dotAgent = scanDotAgent(basePath);
+    for (const agent of dotAgent.agents) {
+      if (!result.agents.some(a => a.name === agent.name)) result.agents.push(agent);
+    }
+    for (const skill of dotAgent.skills) {
+      if (!result.skills.some(s => s.name === skill.name)) result.skills.push(skill);
+    }
+    if (dotAgent.agents.length > 0 || dotAgent.skills.length > 0) {
+      const dotAgentDir = join(basePath, '.agent');
+      if (!result.configPaths.includes(dotAgentDir)) result.configPaths.push(dotAgentDir);
     }
 
     return result;

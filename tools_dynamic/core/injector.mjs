@@ -129,6 +129,7 @@ export class Injector {
     const includeTesting = components.includes('testing');
     const includeMetrics = components.includes('metrics');
     const includeWorkflows = components.includes('workflows');
+    const includeContext = components.includes('context');
 
     if (includeConfig) {
       const agDir = join('config', 'agents-skills');
@@ -251,6 +252,19 @@ export class Injector {
         const substituted = this.substitute(content, variables);
         const targetFile = join('tools', 'agent-metrics', file.name);
         plan.directories.push('tools/agent-metrics/');
+        plan.create.push({ path: targetFile, content: substituted });
+      }
+    }
+
+    if (includeContext) {
+      const toolDir = join('tools', 'context-manager');
+      const files = this.listTemplates(toolDir);
+      for (const file of files) {
+        const content = this.loadTemplate(file.relativePath);
+        if (content === null) continue;
+        const substituted = this.substitute(content, variables);
+        const targetFile = join('tools', 'context-manager', file.name);
+        plan.directories.push('tools/context-manager/');
         plan.create.push({ path: targetFile, content: substituted });
       }
     }

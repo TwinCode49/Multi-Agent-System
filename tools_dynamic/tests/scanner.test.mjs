@@ -45,8 +45,9 @@ describe('Scanner orchestrator', () => {
   test('scan handles project with multiple platforms', () => {
     const scanner = new Scanner();
     const results = scanner.scanAll(join(fixturesDir, 'opencode-project'));
-    assert.equal(results.length, 1);
-    assert.equal(results[0].platform, 'opencode');
+    assert.equal(results.length, 2);
+    assert.ok(results.some(r => r.platform === 'opencode'));
+    assert.ok(results.some(r => r.platform === 'antigravity'));
   });
 
   test('scan returns empty array for vanilla project', () => {

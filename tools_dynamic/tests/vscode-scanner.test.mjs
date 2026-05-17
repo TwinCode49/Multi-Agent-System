@@ -52,4 +52,16 @@ describe('VSCodeScanner', () => {
     assert.equal(result.nativeCapabilities.mcp, false);
     assert.equal(result.nativeCapabilities.customTools, false);
   });
+
+  test('scan discovers agents from .agent/rules/', () => {
+    const scanner = new VSCodeScanner();
+    const result = scanner.scan(join(fixturesDir, 'vscode-project'));
+    assert.ok(result.agents.some(a => a.name === 'formatting'));
+  });
+
+  test('scan includes .agent in configPaths', () => {
+    const scanner = new VSCodeScanner();
+    const result = scanner.scan(join(fixturesDir, 'vscode-project'));
+    assert.ok(result.configPaths.some(p => p.includes('.agent')));
+  });
 });
