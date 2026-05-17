@@ -43,14 +43,14 @@ describe('Reporter', () => {
     assert.ok(html.includes('testing'));
   });
 
-  test('printAnalysis does not throw', () => {
+  test('printAnalysis does not throw', async () => {
     const reporter = new Reporter();
-    reporter.printAnalysis(mockResults, '/test/path');
+    await reporter.printAnalysis(mockResults, '/test/path');
   });
 
-  test('printAnalysis handles empty results', () => {
+  test('printAnalysis handles empty results', async () => {
     const reporter = new Reporter();
-    reporter.printAnalysis([], '/empty');
+    await reporter.printAnalysis([], '/empty');
   });
 
   test('diagnose returns issues for agents with few keywords', () => {
