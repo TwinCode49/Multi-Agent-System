@@ -149,7 +149,7 @@ Ver `Docs/processes/deploy/parallel-execution.md` para los requerimientos del pl
 - Workflows: `tools/agent-workflows/definitions/`
 - Ejecución paralela (plugin externo): `Docs/processes/deploy/parallel-execution.md`
 - Flujos multi-agente: `Docs/processes/agentes/multi-agent-workflows.md`
-- Roadmap: `Docs/project/roadmap.md`
+- Roadmap v1: `Docs/roadmaps/roadmap_v1.md`
 
 ---
 

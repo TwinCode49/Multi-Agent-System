@@ -23,11 +23,11 @@ Create a structured, maintainable system for generating and managing custom AI a
 
 ```
 /
-├── Docs/           # Project documentation
-├── skills/         # Skill templates by platform
-├── agents/         # Agent definitions by platform
-├── .opencode/      # Active OpenCode config
-└── .github/        # Active VS Code config
+├── Docs/           # Project documentation and roadmaps
+├── .opencode/      # Active OpenCode config, agents, and skills
+├── .github/        # Active VS Code skills
+├── dashboard/      # Test project (Nexus Dashboard)
+└── tools/          # Validation, metrics, and workflow tools
 ```
 
 ---

@@ -81,7 +81,7 @@ El autor y el revisor **no deben ser la misma persona**.
 ### 5.4 Publicación (Mantenedor)
 1. Fusionar el PR a la rama principal
 2. Actualizar `Docs/LOG.md` con entrada del nuevo skill
-3. Actualizar `Docs/project/roadmap.md`
+3. Actualizar `Docs/roadmaps/roadmap_v1.md` o `Docs/roadmaps/roadmap_v2.md` según corresponda
 4. Publicar en `skills.sh` (si aplica)
 5. Actualizar la configuración del proyecto (`opencode.json` o `.github/copilot-instructions.md`)
 
