@@ -1,0 +1,12 @@
+{
+  "name": "@opencode/tools-dynamic",
+  "version": "2.0.0-alpha",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "tools-dynamic": "./index.mjs"
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
+  }
+}

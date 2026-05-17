@@ -5,6 +5,7 @@
 > **Última revisión**: 2026-05-17
 > **Fase 0**: ✅ Completada
 > **Fase 1**: ✅ Completada
+> **Fase 2**: ✅ Completada
 
 ## Visión General
 
@@ -86,21 +87,21 @@ Diseñar e implementar los detectores multi-plataforma que son la base de todo e
 
 **Entregable**: 4 scanners funcionales + interfaz unificada + tests ✅
 
-## Phase 2 ⚙️ — Core Engine
+## Phase 2 ✅ — Core Engine
 
 Construir el núcleo de la CLI y los procesadores de datos.
 
-- [ ] CLI framework con `commander` (subcomandos: analyze, report, inject, init, doctor, list-platforms)
-- [ ] `parser.mjs` — parseo unificado de frontmatter YAML, tablas markdown, JSON, YAML
-- [ ] `workflow-generator.mjs` — genera definiciones de workflow basadas en agentes descubiertos y `nativeCapabilities`
+- [x] CLI framework con `commander` (subcomandos: analyze, report, inject, init, doctor, list-platforms)
+- [x] `parser.mjs` — parseo unificado de frontmatter YAML, tablas markdown, JSON, YAML
+- [x] `workflow-generator.mjs` — genera definiciones de workflow basadas en agentes descubiertos y `nativeCapabilities`
   - Si el target tiene Agent Teams nativos → generar config para Agent Teams
   - Si no → generar workflows JSON para `executor.mjs`
-- [ ] `test-generator.mjs` — genera casos de test para `tools/agent-testing/cases/`
-- [ ] `differ.mjs` — muestra diff preview antes de cualquier modificación
-- [ ] `reporter.mjs` — genera output en formato JSON, HTML y texto plano
-- [ ] Template system base (carga de archivos desde `templates/`)
+- [x] `test-generator.mjs` — genera casos de test para `tools/agent-testing/cases/`
+- [x] `differ.mjs` — muestra diff preview antes de cualquier modificación
+- [x] `reporter.mjs` — genera output en formato JSON, HTML y texto plano
+- [x] Template system base (carga de archivos desde `templates/`)
 
-**Entregable**: CLI funcional con todos los subcomandos esqueleto + sistema de templates
+**Entregable**: CLI funcional con todos los subcomandos esqueleto + sistema de templates ✅
 
 ## Phase 3 🔬 — Analysis & Report
 
