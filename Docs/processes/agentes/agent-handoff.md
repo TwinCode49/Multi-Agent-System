@@ -134,8 +134,36 @@ El orquestador ahora incluye una sección completa de `## Handoff Protocol` que 
 - **Distributing Handoffs**: cómo mergea contexto y enriquece prompts para el siguiente agente
 - **Parallel Handoff Coordination**: cómo recolecta y resuelve conflictos entre múltiples handoffs paralelos
 - **Error Handling**: qué hacer cuando un agente falla o devuelve resultado parcial
+- **Orchestrator Synthesis**: cómo el orquestador recolecta todos los handoffs de un workflow completo y genera un synthesis handoff final con conflictos resueltos (ver Phase 0, `FASE-2.md`)
 
-## 6. Edge Cases
+## 6. Synthesis Handoff
+
+Cuando un workflow define un `synthesizer`, al completar todos los pasos regulares el orquestador genera un synthesis handoff especial:
+
+```json
+{
+  "from_step": "__synthesis__",
+  "from_agent": "orchestrator",
+  "status": "completed",
+  "context": {
+    "received_from": [
+      { "from": "code_review", "output": "Found 3 blockers...", "risks": [...], "decisions": [...] },
+      { "from": "security_review", "output": "Found 1 high...", "risks": [...], "decisions": [...] }
+    ],
+    "output_summary": "Synthesized N inputs: [agent summaries]",
+    "artifacts": ["all artifacts from all steps"],
+    "risks": {
+      "all": [/* all risks flattened */],
+      "unique": [/* deduplicated risks */],
+      "conflicts": [/* auto-resolved conflicts with resolution */],
+      "summary": "Found X unique risks, Y conflicts auto-resolved"
+    },
+    "decisions": [/* all decisions from all steps */]
+  }
+}
+```
+
+## 7. Edge Cases
 
 | Situación | Comportamiento |
 |---|---|
@@ -144,14 +172,16 @@ El orquestador ahora incluye una sección completa de `## Handoff Protocol` que 
 | Paso sin dependencias | `received_from` es `[]` — arranca sin contexto previo |
 | Handoff de paso no ejecutado | No se genera handoff; el paso queda en `pending` |
 | Run sin handoffs (no completado) | `--handoff` muestra mensaje: "No handoff data — run may not be completed yet" |
+| Run en `synthesis_pending` | `--handoff` muestra todos los handoffs de pasos completados más indicador de síntesis pendiente |
+| Synthesis handoff fallido | El orquestador marca el synthesis step como `failed`; el run completo queda en `failed` |
 
-## 7. Clasificación
+## 8. Clasificación
 
 - **Categoría**: Agentes
-- **Fase**: 4.3
+- **Fase**: 4.3 (core), Phase 0 (synthesis)
 - **Depende de**: Fase 4.1 (workflows multi-agente), Fase 4.2 (ejecución background)
 
-## 8. Referencias
+## 9. Referencias
 
 - Herramienta: `tools/agent-workflows/executor.mjs` (comando `--handoff`)
 - Definiciones de agentes: `.opencode/agents/*.md` (sección `## Handoff Protocol`)

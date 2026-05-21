@@ -1,0 +1,9 @@
+{
+  "name": "test-project",
+  "version": "1.0.0",
+  "agents": {
+    "database-specialist": { "mode": "subagent", "path": ".opencode/agents/database-specialist.md" },
+    "test-engineer": { "mode": "subagent", "path": ".opencode/agents/test-engineer.md" },
+    "ui-specialist": { "mode": "subagent", "path": ".opencode/agents/ui-specialist.md" }
+  }
+}

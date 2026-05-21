@@ -1,6 +1,6 @@
 {
   "name": "docs-generation",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Analyze code and generate comprehensive documentation",
   "trigger_keywords": ["generate docs", "document code", "auto-document"],
   "steps": [

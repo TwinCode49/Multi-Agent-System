@@ -62,6 +62,15 @@ function submitRun(workflowName) {
     workflow: workflowName,
     status: "submitted",
     plan,
+    synthesizer: wf.synthesizer ? {
+      agent: wf.synthesizer.agent,
+      enabled: wf.synthesizer.enabled !== false,
+      prompt: wf.synthesizer.prompt,
+      input_from: wf.synthesizer.input_from || [],
+      status: "pending",
+      completedAt: null,
+      handoff: null,
+    } : null,
     currentStep: 0,
     totalSteps: plan.length,
     steps: plan.map(s => ({
@@ -81,7 +90,7 @@ function submitRun(workflowName) {
   };
 
   writeJSON(join(RUNS_DIR, `${runId}.json`), run);
-  return { runId, status: "submitted", totalSteps: plan.length };
+  return { runId, status: "submitted", totalSteps: plan.length, hasSynthesis: !!run.synthesizer };
 }
 
 function listRuns(filterStatus) {
@@ -178,8 +187,12 @@ function completeStep(runId, stepId) {
 
   const allDone = run.steps.every(s => s.status === "completed");
   if (allDone) {
-    run.status = "completed";
-    run.completedAt = new Date().toISOString();
+    if (run.synthesizer?.enabled) {
+      run.status = "synthesis_pending";
+    } else {
+      run.status = "completed";
+      run.completedAt = new Date().toISOString();
+    }
   }
 
   writeJSON(join(RUNS_DIR, `${runId}.json`), run);
@@ -251,6 +264,18 @@ function printHandoffChain(run) {
     }
     console.log();
   }
+  if (run.synthesizer?.handoff) {
+    const h = run.synthesizer.handoff;
+    console.log(`  ◆ ✓ [${h.from_agent}] synthesis`);
+    console.log(`     📋 ${h.context.output_summary}`);
+    if (h.context.risks?.conflicts?.length > 0) {
+      for (const c of h.context.risks.conflicts) {
+        console.log(`     ⚡ Conflict: ${c.description} (${c.between.join(" vs ")}) → ${c.resolved_severity}`);
+      }
+    }
+    if (h.context.artifacts?.length > 0) console.log(`     📁 ${h.context.artifacts.join(", ")}`);
+    console.log();
+  }
 }
 
 function cleanRuns(maxAgeHours = 24) {
@@ -275,6 +300,11 @@ function printRun(run) {
   console.log(`  Workflow:   ${run.workflow}`);
   console.log(`  Status:     ${run.status}`);
   console.log(`  Progress:   ${run.currentStep}/${run.totalSteps}`);
+  if (run.synthesizer) {
+    const syn = run.synthesizer;
+    const icon = syn.status === "completed" ? "✓" : syn.status === "skipped" ? "–" : "○";
+    console.log(`  Synthesis:  ${icon} [${syn.agent}] (${syn.status})`);
+  }
   console.log(`  Submitted:  ${run.submittedAt}`);
   if (run.startedAt) console.log(`  Started:    ${run.startedAt}`);
   if (run.completedAt) console.log(`  Completed:  ${run.completedAt}`);
@@ -284,6 +314,108 @@ function printRun(run) {
     const icon = s.status === "completed" ? "✓" : s.status === "running" ? "▶" : s.status === "failed" ? "✗" : "○";
     console.log(`    ${icon} [${s.agent}] ${s.step_id} (${s.status})`);
   }
+}
+
+function resolveConflicts(handoffs) {
+  const all = handoffs.flatMap(h => (h.context.risks || []).map(r => ({
+    ...r,
+    from: h.from_step
+  })));
+
+  const conflicts = [];
+  const seen = new Map();
+
+  for (const risk of all) {
+    const key = risk.description.toLowerCase().slice(0, 40);
+    if (seen.has(key)) {
+      const prev = seen.get(key);
+      if (prev.severity !== risk.severity) {
+        conflicts.push({
+          between: [prev.from, risk.from],
+          description: risk.description,
+          severities: [prev.severity, risk.severity],
+          resolution: "auto",
+          resolved_severity: risk.severity > prev.severity ? risk.severity : prev.severity
+        });
+      }
+    } else {
+      seen.set(key, risk);
+    }
+  }
+
+  return {
+    all,
+    unique: [...seen.values()],
+    conflicts,
+    summary: `Found ${seen.size} unique risks, ${conflicts.length} conflicts auto-resolved`
+  };
+}
+
+function getSynthesisOutput(run, inputHandoffs) {
+  const summaries = inputHandoffs.map(h =>
+    `[${h.from_agent}] ${h.from_step}: ${h.context.output_summary}`
+  ).join("; ");
+  return `Synthesized ${inputHandoffs.length} inputs: ${summaries}`;
+}
+
+function synthesizeRun(runId) {
+  const run = getRun(runId);
+  if (!run) return { error: `Run "${runId}" not found` };
+  if (run.status !== "synthesis_pending") {
+    return { error: `Run is "${run.status}", not synthesis_pending` };
+  }
+
+  const inputSteps = run.synthesizer.input_from?.length > 0
+    ? run.synthesizer.input_from
+    : run.steps.map(s => s.step_id);
+
+  const inputHandoffs = inputSteps
+    .map(id => run.handoffs.find(h => h.from_step === id))
+    .filter(Boolean);
+
+  const synthesisHandoff = {
+    from_step: "__synthesis__",
+    from_agent: run.synthesizer.agent,
+    status: "completed",
+    context: {
+      received_from: inputHandoffs.map(h => ({
+        from: h.from_step,
+        output: h.context.output_summary,
+        risks: h.context.risks || [],
+        decisions: h.context.decisions || [],
+        artifacts: h.context.artifacts || [],
+      })),
+      output_summary: getSynthesisOutput(run, inputHandoffs),
+      artifacts: inputHandoffs.flatMap(h => h.context.artifacts || []),
+      risks: resolveConflicts(inputHandoffs),
+      decisions: inputHandoffs.flatMap(h => h.context.decisions || []),
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  run.synthesizer.status = "completed";
+  run.synthesizer.handoff = synthesisHandoff;
+  run.synthesizer.completedAt = new Date().toISOString();
+  run.handoffs.push(synthesisHandoff);
+  run.status = "completed";
+  run.completedAt = new Date().toISOString();
+
+  writeJSON(join(RUNS_DIR, `${runId}.json`), run);
+  return { runId, status: "completed" };
+}
+
+function skipSynthesis(runId) {
+  const run = getRun(runId);
+  if (!run) return { error: `Run "${runId}" not found` };
+  if (run.status !== "synthesis_pending") {
+    return { error: `Run is "${run.status}", not synthesis_pending` };
+  }
+  run.synthesizer.status = "skipped";
+  run.synthesizer.completedAt = new Date().toISOString();
+  run.status = "completed";
+  run.completedAt = new Date().toISOString();
+  writeJSON(join(RUNS_DIR, `${runId}.json`), run);
+  return { runId, status: "completed", synthesis: "skipped" };
 }
 
 function main() {
@@ -303,6 +435,7 @@ function main() {
       console.log(`  ✅ Submitted — run ID: ${result.runId}`);
       console.log(`     Status: ${result.status}`);
       console.log(`     Steps:  ${result.totalSteps}`);
+      if (result.hasSynthesis) console.log(`     🧠 Synthesis: enabled (${name} has orchestrator synthesis)`);
       console.log(`\n  Track: node tools/agent-workflows/executor.mjs --status ${result.runId}`);
       console.log(`  Simulate: node tools/agent-workflows/executor.mjs --simulate ${result.runId}`);
       break;
@@ -361,10 +494,28 @@ function main() {
       }
       const allDone = run.steps.every(s => s.status === "completed");
       if (allDone) {
-        run.status = "completed";
-        run.completedAt = new Date().toISOString();
-        run.currentStep = run.totalSteps;
-        console.log("\n  ✅ Workflow completed");
+        if (run.synthesizer?.enabled) {
+          run.status = "synthesis_pending";
+          writeJSON(join(RUNS_DIR, `${runId}.json`), run);
+          const synthResult = synthesizeRun(runId);
+          if (synthResult.error) { console.log(`\n  ❌ Synthesis failed: ${synthResult.error}`); break; }
+          console.log(`\n  🧠 [orchestrator] synthesis`);
+          const h = run.synthesizer.handoff;
+          if (h) {
+            console.log(`     ✓ ${h.context.output_summary}`);
+            if (h.context.risks?.conflicts?.length > 0) {
+              for (const c of h.context.risks.conflicts) {
+                console.log(`     ⚡ Conflict resolved: ${c.description} → ${c.resolved_severity}`);
+              }
+            }
+          }
+          console.log("\n  ✅ Workflow completed with orchestrator synthesis");
+        } else {
+          run.status = "completed";
+          run.completedAt = new Date().toISOString();
+          run.currentStep = run.totalSteps;
+          console.log("\n  ✅ Workflow completed");
+        }
       }
       writeJSON(join(RUNS_DIR, `${runId}.json`), run);
       break;
@@ -389,6 +540,25 @@ function main() {
       const result = completeStep(runId, stepId);
       if (result.error) { console.log(`  ❌ ${result.error}`); break; }
       console.log(`  ✓ ${result.stepId} completed — run: ${result.runStatus}`);
+      if (result.runStatus === "synthesis_pending") {
+        console.log(`  🧠 All steps done — synthesis pending. Run --synthesize or --skip-synthesis`);
+      }
+      break;
+    }
+    case "--synthesize": {
+      const runIdSyn = args[1];
+      if (!runIdSyn) { console.log("  Usage: --synthesize <run-id>"); break; }
+      const synResult = synthesizeRun(runIdSyn);
+      if (synResult.error) { console.log(`  ❌ ${synResult.error}`); break; }
+      console.log(`  🧠 Synthesis completed — run: ${synResult.status}`);
+      break;
+    }
+    case "--skip-synthesis": {
+      const runIdSkip = args[1];
+      if (!runIdSkip) { console.log("  Usage: --skip-synthesis <run-id>"); break; }
+      const skipResult = skipSynthesis(runIdSkip);
+      if (skipResult.error) { console.log(`  ❌ ${skipResult.error}`); break; }
+      console.log(`  – Synthesis skipped — run: ${skipResult.status}`);
       break;
     }
     case "--handoff": {
@@ -408,15 +578,17 @@ function main() {
     }
     default:
       console.log("  Usage:");
-      console.log("    --submit <workflow>     Submit a workflow for background execution");
-      console.log("    --status <run-id>       Check run status");
-      console.log("    --list [status]         List all runs (optionally filter by status)");
-      console.log("    --cancel <run-id>       Cancel a run");
-      console.log("    --simulate <run-id>     Simulate full execution of a run");
-      console.log("    --handoff <run-id>      Show handoff chain for a completed run");
-      console.log("    --advance <run-id>      Advance one step (submitted→running)");
-      console.log("    --complete-step <run-id> <step-id>  Mark step as complete");
-      console.log("    --clean [hours]         Clean completed runs older than N hours");
+      console.log("    --submit <workflow>          Submit a workflow for background execution");
+      console.log("    --status <run-id>            Check run status");
+      console.log("    --list [status]              List all runs (optionally filter by status)");
+      console.log("    --cancel <run-id>            Cancel a run");
+      console.log("    --simulate <run-id>          Simulate full execution of a run");
+      console.log("    --handoff <run-id>           Show handoff chain for a completed run");
+      console.log("    --advance <run-id>           Advance one step (submitted→running)");
+      console.log("    --complete-step <id> <step>  Mark step as complete");
+      console.log("    --synthesize <run-id>        Run orchestrator synthesis on completed steps");
+      console.log("    --skip-synthesis <run-id>    Skip synthesis and complete the run");
+      console.log("    --clean [hours]              Clean completed runs older than N hours");
       break;
   }
 }

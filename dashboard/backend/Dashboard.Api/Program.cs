@@ -20,10 +20,11 @@ app.UseFileServer(new FileServerOptions
 
 var svc = app.Services.GetRequiredService<DashboardService>();
 
-app.MapGet("/api/dashboard/summary", () => svc.GetSummary());
-app.MapGet("/api/dashboard/revenue", (int? days) => svc.GetRevenue(days ?? 30));
-app.MapGet("/api/dashboard/orders", (int? page, int? limit) => svc.GetOrders(page ?? 1, limit ?? 10));
-app.MapGet("/api/dashboard/top-products", () => svc.GetTopProducts());
-app.MapGet("/api/dashboard/user-growth", () => svc.GetUserGrowth());
+app.MapGet("/api/metrics/summary", () => svc.GetSummary());
+app.MapGet("/api/metrics/agents", () => svc.GetAgents());
+app.MapGet("/api/metrics/skills", () => svc.GetSkills());
+app.MapGet("/api/metrics/alerts", () => svc.GetAlerts());
+app.MapGet("/api/metrics/workflows/runs", () => svc.GetWorkflowRuns());
+app.MapGet("/api/metrics/workflows/definitions", () => svc.GetWorkflowDefinitions());
 
 app.Run();
