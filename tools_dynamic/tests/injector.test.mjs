@@ -160,6 +160,24 @@ describe('Injector', () => {
         assert.ok(entry.content !== undefined, 'Each create entry should have content');
       }
     });
+
+    it('combines AGENTS.md dynamically for multiple platforms', () => {
+      const multiPlatformScan = [
+        { platform: 'opencode', agents: [], skills: [], configPaths: [], nativeCapabilities: {} },
+        { platform: 'antigravity', agents: [], skills: [], configPaths: [], nativeCapabilities: {} }
+      ];
+      const testPlan = injector.plan(multiPlatformScan, testTarget, ['config']);
+      
+      // Should modify or create AGENTS.md exactly once
+      const agentsMdEntries = [...testPlan.create, ...testPlan.modify].filter(e => e.path === 'AGENTS.md');
+      assert.strictEqual(agentsMdEntries.length, 1, 'Should schedule AGENTS.md exactly once');
+      
+      const agentsMdContent = agentsMdEntries[0].content;
+      assert.ok(agentsMdContent.includes('opencode.json'), 'Should include opencode.json reference');
+      assert.ok(agentsMdContent.includes('GEMINI.md'), 'Should include GEMINI.md reference');
+      assert.ok(agentsMdContent.includes('Antigravity & Multi-Platform Project Rules'), 'Should have multi-platform title');
+      assert.ok(agentsMdContent.includes('@context-steward'), 'Should have context-steward row');
+    });
   });
 
   describe('execute', () => {

@@ -1,6 +1,67 @@
 ---
 *Modelo: opencode/deepseek-v4-flash-free*
 
+## 2026-05-21 Phase 5.8 — Establishing `.agents/` Plural Convention & Hybrid Scanning
+
+### Cambios
+
+- **Convención plural `.agents/` establecida como estándar primario**:
+  - `scanDotAgent()` en `parser.mjs` ya escaneaba `.agents/` primero y `.agent/` como fallback (implementado en Phase 5.6).
+  - Los scanners ahora reportan `.agents/` como ruta unificada en `configPaths` para todos los hallazgos híbridos.
+
+- **Scanners actualizados para usar `.agents` en configPaths**:
+  - `opencode-scanner.mjs`: cambiada la ruta de `.agent` a `.agents` en el bloque de hybrid scanning.
+  - `vscode-scanner.mjs`: ídem.
+  - `antigravity-scanner.mjs` y `claude-scanner.mjs`: ya usaban `.agents` correctamente.
+
+- **Hybrid test fixture creado**:
+  - `antigravity-rules-project` ahora incluye `.agents/rules/` con agentes y skills que coexisten con `.agent/`.
+  - Verifica que el merge híbrido funciona con deduplicación y precedencia plural.
+  - Agentes/skills exclusivos de `.agents/` se descubren correctamente.
+  - Agentes/skills exclusivos de `.agent/` se mantienen por compatibilidad hacia atrás.
+
+- **Nuevo test añadido**: `scan hybrid merges agents/skills from both .agent and .agents` en `antigravity-scanner.test.mjs`.
+
+### Archivos modificados
+
+- `scanners/opencode-scanner.mjs` — `.agent` → `.agents` en configPaths
+- `scanners/vscode-scanner.mjs` — `.agent` → `.agents` en configPaths
+- `tests/antigravity-scanner.test.mjs` — nuevo test de hybrid merge
+- `Docs/logs/LOG_v2.md` — este entry
+
+### Archivos creados
+
+- `tests/fixtures/antigravity-rules-project/.agents/rules/general.md`
+- `tests/fixtures/antigravity-rules-project/.agents/rules/architect.md`
+- `tests/fixtures/antigravity-rules-project/.agents/rules/database/SKILL.md`
+- `tests/fixtures/antigravity-rules-project/.agents/rules/devops/SKILL.md`
+
+---
+
+## 2026-05-20 Phase 5.7 (Revision) — Multi-Platform AGENTS.md Combining & Phase 6 Postponement
+
+### Cambios
+
+- **Combinación inteligente de AGENTS.md**:
+  - Removido el procesamiento repetitivo de `AGENTS.md` dentro del bucle de plataformas en `injector.plan()`.
+  - Agregado método `generateCombinedAgentsMd(projectName, activePlatforms)` a la clase `Injector`. Construye programáticamente el archivo `AGENTS.md` combinando los archivos específicos de IA (como `opencode.json`, `GEMINI.md`, `.github/copilot-instructions.md`, `CLAUDE.md`) según las plataformas que estén activas en la configuración inyectada.
+  - La matriz de despacho incluye todas las 9 reglas core de despacho actualizadas (con `@context-steward`).
+
+- **Roadmap Actualizado**:
+  - Marcada la **Fase 6** (Distribution) como **Omitida (Pospuesta a futuro)** en `Docs/roadmaps/roadmap_v2.md` con el objetivo de estabilizar y agregar más características antes del despliegue del paquete en npm.
+
+- **Tests de Integración**:
+  - Creado un test en `tests/injector.test.mjs` para verificar la planificación en proyectos multi-plataforma y corroborar que `AGENTS.md` se combine sin colisiones y con todas sus directivas.
+
+### Archivos modificados
+
+- `core/injector.mjs` — implementado método y modificado `plan()`
+- `tests/injector.test.mjs` — agregado test de integración multi-plataforma
+- `Docs/roadmaps/roadmap_v2.md` — postergación de la fase 6
+- `Docs/logs/LOG_v2.md` — este log
+
+---
+
 ## 2026-05-17 Phase 5.6 — Cross-Platform `.agent/` Convention
 
 ### Cambios

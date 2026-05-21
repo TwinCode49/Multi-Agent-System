@@ -105,6 +105,9 @@ export class AntigravityScanner extends PlatformScanner {
   detect(basePath) {
     return Parser.exists(join(basePath, 'antigravity.yaml'))
       || Parser.exists(join(basePath, 'antigravity.json'))
+      || Parser.exists(join(basePath, '.agents', 'rules'))
+      || Parser.exists(join(basePath, '.agents', 'agents'))
+      || Parser.exists(join(basePath, '.agents', 'skills'))
       || Parser.exists(join(basePath, '.agent', 'rules'))
       || Parser.exists(join(basePath, '.agent', 'agents'))
       || Parser.exists(join(basePath, '.agent', 'skills'));
@@ -197,9 +200,9 @@ export class AntigravityScanner extends PlatformScanner {
       }
     }
     if (dotAgent.agents.length > 0 || dotAgent.skills.length > 0) {
-      const dotAgentDir = join(basePath, '.agent');
-      if (!result.configPaths.some(p => p === dotAgentDir || p.startsWith(dotAgentDir + '\\') || p.startsWith(dotAgentDir + '/'))) {
-        result.configPaths.push(dotAgentDir);
+      const dotAgentsDir = join(basePath, '.agents');
+      if (!result.configPaths.some(p => p === dotAgentsDir || p.startsWith(dotAgentsDir + '\\') || p.startsWith(dotAgentsDir + '/'))) {
+        result.configPaths.push(dotAgentsDir);
       }
       result.platformMeta.agentDiscovery = config ? 'yaml+rules' : 'rules';
     }

@@ -2,7 +2,7 @@
 
 > **Versión**: 2.0
 > **Estado**: Planificado
-> **Última revisión**: 2026-05-17
+> **Última revisión**: 2026-05-21
 > **Fase 0**: ✅ Completada
 > **Fase 1**: ✅ Completada
 > **Fase 2**: ✅ Completada
@@ -11,6 +11,10 @@
 > **Fase 5**: ✅ Completada
 > **Fase 5.5**: ✅ Completada
 > **Fase 5.6**: ✅ Completada
+> **Fase 5.7**: ✅ Completada
+> **Fase 5.8**: ✅ Completada
+> **Fase de Estabilización**: 🟡 En curso
+> **Fase 6**: 🚫 Omitida (Pospuesta a futuro)
 
 ## Visión General
 
@@ -292,7 +296,51 @@ Implementar el directorio `.agent/` como convención transversal detectada por t
 
 ---
 
-## Phase 6 📦 — Distribution & Documentation (Hybrid pnpm + npm)
+## Phase 5.7 🔀 — Multi-Platform AGENTS.md Combining & Phase 6 Postponement
+
+Unificar la generación de `AGENTS.md` para que combine dinámicamente las plataformas activas en lugar de procesarlo repetitivamente dentro del bucle de plataformas.
+
+### Problema
+- [x] `AGENTS.md` se procesaba dentro del bucle de plataformas, generando contenido duplicado o incompleto
+- [x] No había un método centralizado para construir el archivo combinado con las plataformas activas
+
+### Solución
+- [x] Nuevo método `generateCombinedAgentsMd(projectName, activePlatforms)` en `Injector` — construye `AGENTS.md` programáticamente listando los archivos AI-facing según plataformas activas
+- [x] Matriz de despacho incluye las 9 reglas core actualizadas (con `@context-steward`)
+- [x] Test de integración multi-plataforma en `injector.test.mjs`
+- [x] **Fase 6 marcada como omitida** para priorizar estabilización del core antes de publicación npm
+
+**Entregable**: AGENTS.md generado dinámicamente para combinaciones multi-plataforma, con test de integración. ✅
+
+---
+
+## Phase 5.8 📁 — Establishing `.agents/` Plural Convention & Hybrid Scanning
+
+Establecer `.agents/` como el directorio primario (plural) para agentes y skills, alineado con el estándar **[agentskills.io](https://agentskills.io)**, manteniendo compatibilidad total hacia atrás con `.agent/`.
+
+### Problema
+- [x] Phase 5.6 introdujo `scanDotAgent()` escaneando `.agent/` como convención cross-platform
+- [x] El estándar emergente agentskills.io usa `.agents/` (plural), creando incertidumbre sobre cuál convención seguir
+- [x] Los scanners reportaban `.agent/` en `configPaths` en lugar de la ruta unificada `.agents/`
+
+### Solución
+- [x] `scanDotAgent()` ya escaneaba `.agents/` primero y `.agent/` como fallback (heredado de Phase 5.6)
+- [x] `opencode-scanner.mjs` y `vscode-scanner.mjs` ahora reportan `.agents/` en `configPaths` en lugar de `.agent/`
+- [x] `antigravity-scanner.mjs` y `claude-scanner.mjs` ya usaban `.agents/` correctamente
+- [x] Fixture híbrido creado en `antigravity-rules-project` con ambos directorios coexistiendo
+- [x] Nuevo test `scan hybrid merges agents/skills from both .agent and .agents` con verificación de:
+  - Merge correcto de ambas fuentes
+  - Precedencia plural (`.agents` gana en duplicados)
+  - Deduplicación por nombre
+  - `configPaths` unificado en `.agents`
+
+**Entregable**: Convención `.agents/` como estándar primario, scanners unificados, tests de hybrid scanning, compatibilidad hacia atrás garantizada con 137/137 tests pasando. ✅
+
+---
+
+## Phase 6 📦 — Distribution & Documentation (Hybrid pnpm + npm) — 🚫 Omitida (Pospuesta a futuro)
+
+*Nota: Esta fase ha sido omitida temporalmente de la v2.0-alpha para priorizar la estabilización del core, la inyección combinada multi-plataforma y la adición de nuevas funcionalidades antes de su publicación oficial.*
 
 Empaquetar y distribuir la herramienta con una estrategia híbrida: **pnpm para desarrollo y testing** (seguridad por defecto contra supply chain attacks), **npm solo para el paso final de publicación OIDC** (mayor madurez en trusted publishing).
 
@@ -316,7 +364,7 @@ npm publish se mantiene para el paso final porque su integración OIDC (trusted 
 - [ ] CI/CD pipeline híbrido: pnpm install --frozen-lockfile para test, npm publish para release
 - [ ] Changelog y migration guide desde v1
 
-**Entregable**: Paquete npm publicado + documentación completa + CI/CD con seguridad supply chain
+**Entregable**: Paquete npm publicado + documentación completa + CI/CD con seguridad supply chain (Contemplado para futuras versiones post-estabilización)
 
 ---
 

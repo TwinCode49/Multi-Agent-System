@@ -10,17 +10,17 @@
 - Prefer clarity over cleverness
 
 ## Agent Behavior
-- Read agent definitions from `.agent/rules/` for specialized instructions
+- Read agent definitions from `.agents/rules/` for specialized instructions
 - Use `AGENTS.md` dispatch matrix for task routing
 - Report findings back with clear rationale
 
 ## Workflow Integration
-- Workflow definitions: `.agent/workflows/*.md`
+- Workflow definitions: `.agents/workflows/*.md`
 - Testing framework: `tools/agent-testing/run.mjs`
 - Performance metrics: `tools/agent-metrics/report.mjs`
 - Multi-agent execution: `tools/agent-workflows/executor.mjs`
 
 ## Constraints
 - Do NOT modify `AGENTS.md` without explicit user request
-- Do NOT delete existing `.agent/rules/` files
+- Do NOT delete existing `.agents/rules/` files
 - Always check existing rules before making assumptions about project patterns

@@ -109,4 +109,32 @@ describe('AntigravityScanner', () => {
     assert.ok(logSkill);
     assert.ok(logSkill.references.length >= 1);
   });
+
+  test('scan hybrid merges agents/skills from both .agent and .agents', () => {
+    const scanner = new AntigravityScanner();
+    const result = scanner.scan(join(fixturesDir, 'antigravity-rules-project'));
+
+    // Agents from .agent still found
+    assert.ok(result.agents.some(a => a.name === 'database-specialist'), 'database-specialist from .agent');
+    assert.ok(result.agents.some(a => a.name === 'deployment'), 'deployment from .agent/agents/');
+
+    // Agents from .agents found
+    assert.ok(result.agents.some(a => a.name === 'architect'), 'architect from .agents');
+
+    // Plural takes precedence for duplicate names
+    const generalAgent = result.agents.find(a => a.name === 'general');
+    assert.ok(generalAgent, 'general agent exists');
+    assert.ok(generalAgent.role.includes('plural'), 'general agent role is from .agents (plural convention)');
+
+    // Skills from .agents
+    assert.ok(result.skills.some(s => s.name === 'database'), 'database skill from .agents');
+    assert.ok(result.skills.some(s => s.name === 'devops'), 'devops skill from .agents');
+
+    // Skills from .agent still found
+    assert.ok(result.skills.some(s => s.name === 'testing'), 'testing skill from .agent');
+    assert.ok(result.skills.some(s => s.name === 'logging'), 'logging skill from .agent');
+
+    // configPaths uses .agents (unified path)
+    assert.ok(result.configPaths.some(p => p.includes('.agents')), 'configPaths contains .agents');
+  });
 });
