@@ -36,49 +36,68 @@ function parseSkillFromDir(skillDir) {
 }
 
 export function scanDotAgent(basePath) {
-  const agentDir = join(basePath, '.agent');
-  if (!existsSync(agentDir)) return { agents: [], skills: [] };
-
   const agents = [];
   const skills = [];
 
-  const rulesDir = join(agentDir, 'rules');
-  if (existsSync(rulesDir)) {
-    const entries = readdirSync(rulesDir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        const skill = parseSkillFromDir(join(rulesDir, entry.name));
-        if (skill && !skills.some(s => s.name === skill.name)) skills.push(skill);
-      } else if (entry.isFile() && entry.name.endsWith('.md')) {
-        const content = readFileSafe(join(rulesDir, entry.name));
-        if (content) agents.push(parseAgentFromMd(join(rulesDir, entry.name), content));
-      }
-    }
-  }
+  const scanDir = (agentDir) => {
+    if (!existsSync(agentDir)) return;
 
-  const nativeAgentsDir = join(agentDir, 'agents');
-  if (existsSync(nativeAgentsDir)) {
-    const entries = readdirSync(nativeAgentsDir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.isFile() && entry.name.endsWith('.md')) {
-        const name = basename(entry.name, '.md');
-        if (agents.some(a => a.name === name)) continue;
-        const content = readFileSafe(join(nativeAgentsDir, entry.name));
-        if (content) agents.push(parseAgentFromMd(join(nativeAgentsDir, entry.name), content));
+    const rulesDir = join(agentDir, 'rules');
+    if (existsSync(rulesDir)) {
+      const entries = readdirSync(rulesDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const skill = parseSkillFromDir(join(rulesDir, entry.name));
+          if (skill && !skills.some(s => s.name === skill.name)) {
+            skills.push(skill);
+          }
+        } else if (entry.isFile() && entry.name.endsWith('.md')) {
+          const content = readFileSafe(join(rulesDir, entry.name));
+          if (content) {
+            const parsed = parseAgentFromMd(join(rulesDir, entry.name), content);
+            if (!agents.some(a => a.name === parsed.name)) {
+              agents.push(parsed);
+            }
+          }
+        }
       }
     }
-  }
 
-  const skillsDir = join(agentDir, 'skills');
-  if (existsSync(skillsDir)) {
-    const entries = readdirSync(skillsDir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        const skill = parseSkillFromDir(join(skillsDir, entry.name));
-        if (skill && !skills.some(s => s.name === skill.name)) skills.push(skill);
+    const nativeAgentsDir = join(agentDir, 'agents');
+    if (existsSync(nativeAgentsDir)) {
+      const entries = readdirSync(nativeAgentsDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.md')) {
+          const name = basename(entry.name, '.md');
+          if (agents.some(a => a.name === name)) continue;
+          const content = readFileSafe(join(nativeAgentsDir, entry.name));
+          if (content) {
+            const parsed = parseAgentFromMd(join(nativeAgentsDir, entry.name), content);
+            if (!agents.some(a => a.name === parsed.name)) {
+              agents.push(parsed);
+            }
+          }
+        }
       }
     }
-  }
+
+    const skillsDir = join(agentDir, 'skills');
+    if (existsSync(skillsDir)) {
+      const entries = readdirSync(skillsDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const skill = parseSkillFromDir(join(skillsDir, entry.name));
+          if (skill && !skills.some(s => s.name === skill.name)) {
+            skills.push(skill);
+          }
+        }
+      }
+    }
+  };
+
+  // Scan .agents first (primary standard), then .agent for backward compatibility.
+  scanDir(join(basePath, '.agents'));
+  scanDir(join(basePath, '.agent'));
 
   return { agents, skills };
 }

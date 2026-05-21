@@ -110,8 +110,8 @@ export class ClaudeScanner extends PlatformScanner {
       if (!result.skills.some(s => s.name === skill.name)) result.skills.push(skill);
     }
     if (dotAgent.agents.length > 0 || dotAgent.skills.length > 0) {
-      const dotAgentDir = join(basePath, '.agent');
-      if (!result.configPaths.includes(dotAgentDir)) result.configPaths.push(dotAgentDir);
+      const dotAgentsDir = join(basePath, '.agents');
+      if (!result.configPaths.includes(dotAgentsDir)) result.configPaths.push(dotAgentsDir);
     }
 
     return result;
