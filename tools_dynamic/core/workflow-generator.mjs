@@ -1,6 +1,8 @@
+import { classifyBySkill } from './role-profiles.mjs';
+
 export class WorkflowGenerator {
   generate(scanResult, options = {}) {
-    const roles = this.classifyAgents(scanResult.agents);
+    const roles = this.classifyAgents(scanResult.agents, scanResult.skills || []);
     const workflows = [];
     const { orchestratorSynthesis } = options;
 
@@ -24,7 +26,7 @@ export class WorkflowGenerator {
   }
 
   suggestWorkflows(scanResult) {
-    const roles = this.classifyAgents(scanResult.agents);
+    const roles = this.classifyAgents(scanResult.agents, scanResult.skills || []);
     const suggestions = [];
 
     if (roles.reviewers.length >= 1 && roles.writers.length >= 1) {
@@ -43,26 +45,63 @@ export class WorkflowGenerator {
     return suggestions;
   }
 
-  classifyAgents(agents) {
+  classifyAgents(agents, skills = []) {
+    this._classificationMap = {};
     const roles = { reviewers: [], builders: [], writers: [], testers: [] };
 
     for (const agent of agents) {
-      const kw = agent.keywords.join(' ').toLowerCase();
-      const name = agent.name.toLowerCase();
+      let classification = null;
 
-      if (kw.match(/review|security|quality|audit|perf|performance/) || name.match(/review|security|perf/))
-        roles.reviewers.push(agent);
-      else if (kw.match(/database|schema|api|backend|server|devops|ui|frontend|component/) || name.match(/database|devops|ui/))
-        roles.builders.push(agent);
-      else if (kw.match(/doc|readme|changelog|apidoc|migration/) || name.match(/doc/))
-        roles.writers.push(agent);
-      else if (kw.match(/test|spec|coverage|unittest|jest|pytest/) || name.match(/test/))
-        roles.testers.push(agent);
-      else
-        roles.builders.push(agent);
+      if (skills.length > 0 && agent.skills && agent.skills.length > 0) {
+        const skillName = agent.skills[0];
+        const skillDef = skills.find(s => s.name === skillName);
+        if (skillDef) {
+          classification = classifyBySkill(skillDef);
+          if (classification.classified) {
+            classification.skillName = skillDef.name;
+          }
+        }
+      }
+
+      if (!classification || !classification.classified) {
+        classification = this._classifyByKeywords(agent);
+      }
+
+      this._classificationMap[agent.name] = classification;
+
+      switch (classification.role) {
+        case 'reviewer':
+          roles.reviewers.push(agent);
+          break;
+        case 'writer':
+          roles.writers.push(agent);
+          break;
+        case 'tester':
+          roles.testers.push(agent);
+          break;
+        default:
+          roles.builders.push(agent);
+          break;
+      }
     }
 
     return roles;
+  }
+
+  _classifyByKeywords(agent) {
+    const kw = agent.keywords.join(' ').toLowerCase();
+    const name = agent.name.toLowerCase();
+
+    if (kw.match(/review|security|quality|audit|perf|performance/) || name.match(/review|security|perf/))
+      return { role: 'reviewer', confidence: 0.5, method: 'keyword', classified: true };
+    if (kw.match(/database|schema|api|backend|server|devops|ui|frontend|component/) || name.match(/database|devops|ui/))
+      return { role: 'builder', confidence: 0.5, method: 'keyword', classified: true };
+    if (kw.match(/doc|readme|changelog|apidoc|migration/) || name.match(/doc/))
+      return { role: 'writer', confidence: 0.5, method: 'keyword', classified: true };
+    if (kw.match(/test|spec|coverage|unittest|jest|pytest/) || name.match(/test/))
+      return { role: 'tester', confidence: 0.5, method: 'keyword', classified: true };
+
+    return { role: 'builder', confidence: 0, method: 'keyword', classified: false };
   }
 
   buildReviewPipeline(roles, scanResult, orchestratorSynthesis) {
@@ -78,6 +117,7 @@ export class WorkflowGenerator {
       wf.steps.push({
         id: `${reviewer.name}_review`,
         agent: reviewer.name,
+        skill: this._classificationMap[reviewer.name]?.skillName,
         prompt: `Review the code for ${reviewer.role || 'issues'}. Output structured findings.`,
         output_key: `${reviewer.name}_review`,
         depends_on: [],
@@ -89,6 +129,7 @@ export class WorkflowGenerator {
       wf.steps.push({
         id: 'synthesis',
         agent: writer.name,
+        skill: this._classificationMap[writer.name]?.skillName,
         prompt: 'Synthesize the review findings into a unified report.',
         output_key: 'final_report',
         depends_on: roles.reviewers.map(r => `${r.name}_review`),
@@ -121,13 +162,15 @@ export class WorkflowGenerator {
         {
           id: `${builder.name}_build`,
           agent: builder.name,
-          prompt: `Implement the feature. Output code and changes.`,
+          skill: this._classificationMap[builder.name]?.skillName,
+          prompt: 'Implement the feature. Output code and changes.',
           output_key: `${builder.name}_build`,
           depends_on: [],
         },
         {
           id: `${tester.name}_test`,
           agent: tester.name,
+          skill: this._classificationMap[tester.name]?.skillName,
           prompt: 'Write tests for the implementation created in the previous step.',
           output_key: `${tester.name}_test`,
           depends_on: [`${builder.name}_build`],
@@ -139,6 +182,7 @@ export class WorkflowGenerator {
       wf.steps.push({
         id: `${writer.name}_docs`,
         agent: writer.name,
+        skill: this._classificationMap[writer.name]?.skillName,
         prompt: 'Document the new feature: update API docs, add changelog entry.',
         output_key: `${writer.name}_docs`,
         depends_on: [`${builder.name}_build`],
@@ -160,6 +204,7 @@ export class WorkflowGenerator {
         {
           id: `${builder.name}_inventory`,
           agent: builder.name,
+          skill: this._classificationMap[builder.name]?.skillName,
           prompt: 'Analyze the codebase and produce an inventory of APIs, components, and configurations.',
           output_key: `${builder.name}_inventory`,
           depends_on: [],
@@ -171,6 +216,7 @@ export class WorkflowGenerator {
       wf.steps.push({
         id: `${writer.name}_docs`,
         agent: writer.name,
+        skill: this._classificationMap[writer.name]?.skillName,
         prompt: 'Generate documentation based on the code inventory.',
         output_key: `${writer.name}_docs`,
         depends_on: [`${builder.name}_inventory`],

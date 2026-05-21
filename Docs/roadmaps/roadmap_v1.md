@@ -23,11 +23,11 @@
 - [x] 2.8 Prompt optimization skill
 - [x] Test skills across platforms
 - [x] Establish skill review process *(ver Docs/processes/skills/skill-review.md)*
-- [~] Publish skills to skills.sh *(omitido — no publicado aún)*
+- [~] Publish skills to skills.sh *(omitido — ver Docs/project/proposed-changes.md#11-v1--publicación-en-skillssh)*
 
 ## Phase 3 ✅ — Agent Specialization
 - [x] Define all secondary agent prompts
-- [~] Implement parallel execution plugin (OMO) *(omitido — ver Docs/processes/deploy/parallel-execution.md)*
+- [~] Implement parallel execution plugin (OMO) *(omitido — ver Docs/project/proposed-changes.md#12-v1--plugin-de-ejecución-paralela-omo)*
 - [x] Create agent testing framework *(ver Docs/processes/testing/agent-testing.md)*
 - [x] Establish agent performance metrics *(ver Docs/processes/agentes/performance-metrics.md)*
 

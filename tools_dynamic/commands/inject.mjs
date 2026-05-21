@@ -1,4 +1,5 @@
 import { Scanner } from '../scanners/scanner.mjs';
+import { Reporter } from '../core/reporter.mjs';
 import { Injector } from '../core/injector.mjs';
 import { Differ } from '../core/differ.mjs';
 import { existsSync, readFileSync } from 'fs';
@@ -78,5 +79,12 @@ export async function runInject(targetPath, options) {
     }
   }
 
-  console.log(`\n  ${GREEN}✅ Injection complete.${RESET}\n`);
+  const reporter = new Reporter();
+  const summary = reporter._buildSummary(results);
+  if (summary.unclassifiedAgents > 0 || summary.blockers > 0) {
+    console.log(`  ${YELLOW}⚠️  ${summary.unclassifiedAgents} agent(s) not classified, ${summary.blockers} blocker(s) found${RESET}`);
+    console.log(`  💡 Run ${CYAN}tools-dynamic validate .${RESET} for detailed diagnostics.\n`);
+  }
+
+  console.log(`  ${GREEN}✅ Injection complete.${RESET}\n`);
 }

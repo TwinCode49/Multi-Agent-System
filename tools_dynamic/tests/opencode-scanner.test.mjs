@@ -113,4 +113,20 @@ describe('OpenCodeScanner', () => {
     const result = scanner.scan(join(fixturesDir, 'opencode-project'));
     assert.ok(result.configPaths.some(p => p.includes('.agent')));
   });
+
+  test('scan populates agent.skills field', () => {
+    const scanner = new OpenCodeScanner();
+    const result = scanner.scan(join(fixturesDir, 'opencode-project'));
+    for (const agent of result.agents) {
+      assert.ok(Array.isArray(agent.skills));
+    }
+  });
+
+  test('scan populates skill.agents field', () => {
+    const scanner = new OpenCodeScanner();
+    const result = scanner.scan(join(fixturesDir, 'opencode-project'));
+    for (const skill of result.skills) {
+      assert.ok(Array.isArray(skill.agents));
+    }
+  });
 });

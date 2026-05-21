@@ -354,10 +354,11 @@ The primary agent uses the project default model. Secondary agents may use speci
 
     if (includeWorkflows) {
       for (const platform of scanResults) {
+        const agentSkills = buildAgentSkillsMap(platform);
         const wfg = new WorkflowGenerator();
         const wfs = wfg.generate(platform, { orchestratorSynthesis: true });
         for (const wf of wfs) {
-          const content = JSON.stringify(wf, null, 2);
+          const content = JSON.stringify({ ...wf, agent_skills: agentSkills }, null, 2);
           const targetFile = join('tools', 'agent-workflows', 'definitions', `${wf.name}.json`);
           plan.create.push({ path: targetFile, content });
         }
@@ -366,10 +367,12 @@ The primary agent uses the project default model. Secondary agents may use speci
 
     if (includeTesting) {
       for (const platform of scanResults) {
+        const agentSkills = buildAgentSkillsMap(platform);
         const tg = new TestGenerator();
         const cases = tg.generate(platform.agents);
         for (const tc of cases) {
-          const content = tg.generateTestCaseFile(tc, 'json');
+          const enriched = { ...tc, skills: agentSkills[tc.name] || [] };
+          const content = tg.generateTestCaseFile(enriched, 'json');
           const targetFile = join('tools', 'agent-testing', 'cases', `${tc.name}.json`);
           plan.create.push({ path: targetFile, content });
         }
@@ -440,6 +443,41 @@ The primary agent uses the project default model. Secondary agents may use speci
 
     return result;
   }
+
+  regenerateWorkflows(scanResults, options = {}) {
+    const entries = [];
+
+    for (const platform of scanResults) {
+      const agentSkills = buildAgentSkillsMap(platform);
+
+      const wfg = new WorkflowGenerator();
+      const wfs = wfg.generate(platform, { orchestratorSynthesis: true });
+      for (const wf of wfs) {
+        const content = JSON.stringify({ ...wf, agent_skills: agentSkills }, null, 2);
+        const targetFile = join('tools', 'agent-workflows', 'definitions', `${wf.name}.json`);
+        entries.push({ path: targetFile, content });
+      }
+
+      const tg = new TestGenerator();
+      const cases = tg.generate(platform.agents);
+      for (const tc of cases) {
+        const enriched = { ...tc, skills: agentSkills[tc.name] || [] };
+        const content = tg.generateTestCaseFile(enriched, 'json');
+        const targetFile = join('tools', 'agent-testing', 'cases', `${tc.name}.json`);
+        entries.push({ path: targetFile, content });
+      }
+    }
+
+    return entries;
+  }
+}
+
+function buildAgentSkillsMap(platform) {
+  const map = {};
+  for (const agent of platform.agents || []) {
+    map[agent.name] = agent.skills || [];
+  }
+  return map;
 }
 
 function existingContentMatches(file, fullPath) {

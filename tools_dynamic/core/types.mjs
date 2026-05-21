@@ -18,6 +18,7 @@
  * @property {{ edit: 'allow'|'deny', bash: 'allow'|'deny' }} permissions
  * @property {string[]} sections
  * @property {boolean} hasHandoff
+ * @property {string[]} skills
  */
 
 /**
@@ -27,6 +28,8 @@
  * @property {string} filePath
  * @property {string[]} references
  * @property {boolean} crossPlatformSynced
+ * @property {string[]} agents
+ * @property {string} [role]
  */
 
 /**

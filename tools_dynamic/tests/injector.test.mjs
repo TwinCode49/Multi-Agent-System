@@ -180,6 +180,50 @@ describe('Injector', () => {
     });
   });
 
+  describe('regenerateWorkflows', () => {
+    const mockPlatform = {
+      platform: 'opencode',
+      agents: [
+        { name: 'test-agent', keywords: ['test', 'spec'], mode: 'subagent', permissions: { edit: 'allow' }, sections: ['Core'], hasHandoff: true, filePath: '', skills: [] },
+        { name: 'review-agent', keywords: ['review', 'quality', 'audit'], mode: 'subagent', permissions: { edit: 'deny' }, sections: ['Core'], hasHandoff: true, filePath: '', skills: [] },
+        { name: 'doc-agent', keywords: ['doc', 'readme', 'changelog'], mode: 'subagent', permissions: { edit: 'allow' }, sections: ['Core'], hasHandoff: true, filePath: '', skills: [] },
+      ],
+      skills: [{ name: 'testing', keywords: ['test'], filePath: '', references: [], crossPlatformSynced: false }],
+      workflows: [],
+      existingTools: ['testing', 'workflows'],
+      configPaths: ['.opencode'],
+      nativeCapabilities: { agentTeams: false },
+      platformMeta: {},
+    };
+
+    it('produces workflow definition entries', () => {
+      const entries = injector.regenerateWorkflows([mockPlatform]);
+      const workflowEntries = entries.filter(e => e.path.includes('definitions'));
+      assert.ok(workflowEntries.length >= 1, 'Should produce at least one workflow definition');
+      for (const entry of workflowEntries) {
+        const parsed = JSON.parse(entry.content);
+        assert.ok(parsed.name, 'Each definition should have a name');
+        assert.ok(Array.isArray(parsed.steps), 'Each definition should have steps');
+      }
+    });
+
+    it('produces test case entries', () => {
+      const entries = injector.regenerateWorkflows([mockPlatform]);
+      const caseEntries = entries.filter(e => e.path.includes('cases'));
+      assert.ok(caseEntries.length >= 1, 'Should produce at least one test case');
+      for (const entry of caseEntries) {
+        const parsed = JSON.parse(entry.content);
+        assert.ok(parsed.name, 'Each test case should have a name');
+        assert.ok(Array.isArray(parsed.skills), 'Each test case should have skills array');
+      }
+    });
+
+    it('handles empty scan results', () => {
+      const entries = injector.regenerateWorkflows([]);
+      assert.equal(entries.length, 0);
+    });
+  });
+
   describe('execute', () => {
     const mockScan = [{
       platform: 'opencode',

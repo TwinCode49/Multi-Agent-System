@@ -7,6 +7,8 @@ import { TestGenerator } from './core/test-generator.mjs';
 import { Differ } from './core/differ.mjs';
 import { Injector } from './core/injector.mjs';
 import { runInject } from './commands/inject.mjs';
+import { runValidate } from './commands/validate.mjs';
+import { runUpdate } from './commands/update.mjs';
 import inquirer from 'inquirer';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
@@ -177,6 +179,11 @@ program
         onFileCreate: (p) => console.log(`  ${GREEN}✅ Created: ${p}${RESET}`),
         onFileModify: (p) => console.log(`  ${CYAN}📝 Modified: ${p}${RESET}`),
       });
+      const injSummary = reporter._buildSummary(results);
+      if (injSummary.unclassifiedAgents > 0 || injSummary.blockers > 0) {
+        console.log(`  ${YELLOW}⚠️  ${injSummary.unclassifiedAgents} agent(s) not classified, ${injSummary.blockers} blocker(s) found${RESET}`);
+        console.log(`  💡 Run ${CYAN}tools-dynamic validate .${RESET} for detailed diagnostics.\n`);
+      }
       console.log(`\n  ${GREEN}✅ Injection complete. ${executeResult.created.length} created, ${executeResult.modified.length} modified.${RESET}\n`);
       return;
     }
@@ -269,11 +276,34 @@ program
       if (executeResult.errors.length > 0) {
         console.log(`  ${YELLOW}⚠️  ${executeResult.errors.length} error(s)${RESET}`);
       }
+      const initSummary = reporter._buildSummary(results);
+      if (initSummary.unclassifiedAgents > 0 || initSummary.blockers > 0) {
+        console.log(`  ${YELLOW}⚠️  ${initSummary.unclassifiedAgents} agent(s) not classified, ${initSummary.blockers} blocker(s) found${RESET}`);
+        console.log(`  💡 Run ${CYAN}tools-dynamic validate .${RESET} for detailed diagnostics.\n`);
+      }
       console.log(`\n  ${GREEN}✅ Bootstrap complete.${RESET}`);
       console.log(`  Run ${CYAN}tools-dynamic doctor .${RESET} to verify the setup.\n`);
     } else {
       console.log(`\n  ${YELLOW}Injection cancelled.${RESET}\n`);
     }
+  });
+
+program
+  .command('validate [path]')
+  .description('Validate agent-skill consistency and configuration')
+  .option('--json', 'Output in JSON format')
+  .action(async (path, options) => {
+    const targetPath = path || '.';
+    await runValidate(targetPath, options);
+  });
+
+program
+  .command('update [path]')
+  .description('Regenerate workflow definitions and test cases from current scan')
+  .option('--dry-run', 'Show diff without writing')
+  .action(async (path, options) => {
+    const targetPath = path || '.';
+    await runUpdate(targetPath, options);
   });
 
 program

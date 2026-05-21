@@ -1,7 +1,7 @@
 import { join, basename, dirname } from 'path';
 import { existsSync } from 'fs';
 import { PlatformScanner } from '../core/types.mjs';
-import { Parser, scanDotAgent } from '../core/parser.mjs';
+import { Parser, scanDotAgent, buildCrossIndex } from '../core/parser.mjs';
 
 export class ClaudeScanner extends PlatformScanner {
   static platformName = 'claude';
@@ -114,6 +114,7 @@ export class ClaudeScanner extends PlatformScanner {
       if (!result.configPaths.includes(dotAgentsDir)) result.configPaths.push(dotAgentsDir);
     }
 
+    buildCrossIndex(result.agents, result.skills);
     return result;
   }
 }

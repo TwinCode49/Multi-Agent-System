@@ -13,6 +13,7 @@ export class TestGenerator {
       ].filter(s => agent.sections.includes(s)),
       modeExpected: agent.mode,
       permissionsExpected: agent.permissions,
+      skills: agent.skills || [],
     }));
   }
 
@@ -33,6 +34,7 @@ export class TestGenerator {
       modeExpected: agent.mode || 'subagent',
       permissionsExpected: agent.permissions || { edit: 'allow', bash: 'allow' },
       hasHandoffExpected: true,
+      skills: agent.skills || [],
     };
 
     if (format === 'json') {

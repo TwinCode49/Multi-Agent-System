@@ -13,7 +13,7 @@
 > **Fase 5.6**: ✅ Completada
 > **Fase 5.7**: ✅ Completada
 > **Fase 5.8**: ✅ Completada
-> **Fase de Estabilización**: 🟡 En curso
+> **Fase de Estabilización**: 🟡 En curso — [`roadmap_v2_stabilization.md`](roadmap_v2_stabilization.md)
 > **Fase 6**: 🚫 Omitida (Pospuesta a futuro)
 
 ## Visión General
@@ -340,31 +340,7 @@ Establecer `.agents/` como el directorio primario (plural) para agentes y skills
 
 ## Phase 6 📦 — Distribution & Documentation (Hybrid pnpm + npm) — 🚫 Omitida (Pospuesta a futuro)
 
-*Nota: Esta fase ha sido omitida temporalmente de la v2.0-alpha para priorizar la estabilización del core, la inyección combinada multi-plataforma y la adición de nuevas funcionalidades antes de su publicación oficial.*
-
-Empaquetar y distribuir la herramienta con una estrategia híbrida: **pnpm para desarrollo y testing** (seguridad por defecto contra supply chain attacks), **npm solo para el paso final de publicación OIDC** (mayor madurez en trusted publishing).
-
-### Justificación
-
-En 2025-2026 el ecosistema npm sufrió ataques masivos de supply chain (Shai-Hulud: 796+ packages comprometidos, worm autoreplicante vía preinstall scripts; 454,648 paquetes maliciosos publicados en 2025). pnpm v11 (abril 2026) mitigó estos vectores con:
-- `strictDepBuilds: true` — scripts de lifecycle bloqueados por defecto
-- `minimumReleaseAge: 1440` — paquetes nuevos no se resuelven hasta 24h después
-- `blockExoticSubdeps: true` — transitivas no pueden usar fuentes no confiables
-- `allowBuilds` — allowlist explícito de paquetes que pueden ejecutar build scripts
-
-npm publish se mantiene para el paso final porque su integración OIDC (trusted publishing con GitHub Actions) es más madura que la de pnpm v11 (tuvo bugs con OIDC tokens hasta v11.0.8+).
-
-- [ ] `package.json` con `packageManager: "pnpm@11.0.0"` + bin entry point
-- [ ] `pnpm-workspace.yaml` con configuración de seguridad (`allowBuilds`, `strictDepBuilds`)
-- [ ] `pnpm-lock.yaml` como lockfile (commiteado)
-- [ ] README.md en inglés (instalación con npm y pnpm, uso rápido, ejemplos)
-- [ ] Documentación en `Docs/processes/tools-dynamic/` en español
-- [ ] Publicación en npm registry como `@opencode/tools-dynamic`
-- [ ] skills.sh publishing (retomar desde v1 — omitido)
-- [ ] CI/CD pipeline híbrido: pnpm install --frozen-lockfile para test, npm publish para release
-- [ ] Changelog y migration guide desde v1
-
-**Entregable**: Paquete npm publicado + documentación completa + CI/CD con seguridad supply chain (Contemplado para futuras versiones post-estabilización)
+*Esta fase ha sido movida a [`Docs/project/proposed-changes.md`](../project/proposed-changes.md#13-v2--distribución--publicación-npm) para centralizar todos los cambios omitidos y propuestas futuras. Consultar ese documento para detalles completos.*
 
 ---
 
@@ -401,7 +377,9 @@ Cada fase genera procesos en `Docs/processes/`:
 | Análisis y reporte | `Docs/processes/tools-dynamic/analysis-report.md` | 3 |
 | Inyección de tools | `Docs/processes/tools-dynamic/injection.md` | 4 |
 | Dashboard de métricas de agentes | `Docs/processes/tools-dynamic/dashboard.md` | 5 |
-| Publicación y distribución | `Docs/processes/tools-dynamic/distribution.md` | 6 |
+| Fase de Estabilización (plan) | `Docs/Fase-Estabilizacion.md` | Estabilización |
+| Fase de Estabilización (roadmap) | `Docs/roadmaps/roadmap_v2_stabilization.md` | Estabilización |
+| Propuestas y cambios omitidos | `Docs/project/proposed-changes.md` | — |
 
 ---
 

@@ -1,7 +1,7 @@
 import { join, basename, dirname } from 'path';
 import { readdirSync, existsSync, statSync } from 'fs';
 import { PlatformScanner } from '../core/types.mjs';
-import { Parser, scanDotAgent } from '../core/parser.mjs';
+import { Parser, scanDotAgent, buildCrossIndex } from '../core/parser.mjs';
 
 export function parseSimpleYaml(content) {
   const result = {};
@@ -207,6 +207,7 @@ export class AntigravityScanner extends PlatformScanner {
       result.platformMeta.agentDiscovery = config ? 'yaml+rules' : 'rules';
     }
 
+    buildCrossIndex(result.agents, result.skills);
     return result;
   }
 }

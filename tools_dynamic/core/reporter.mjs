@@ -342,6 +342,7 @@ export class Reporter {
       console.log();
     }
 
+    this._printAgentSkillMapping(results);
     this._printSummary(results);
     this._printNextSteps(results);
   }
@@ -449,6 +450,20 @@ export class Reporter {
             severity: 'info',
             message: `"${agent.name}" has only ${agent.keywords.length} keywords — dispatch matching may be imprecise`,
             suggestion: 'Add more diverse trigger keywords for accurate auto-dispatch',
+          });
+        }
+
+        const hasSkills = agent.skills && agent.skills.length > 0;
+        const wfg = new WorkflowGenerator();
+        const roles = wfg.classifyAgents([agent], platform.skills || []);
+        const meta = wfg._classificationMap[agent.name];
+        if (meta && !meta.classified && hasSkills) {
+          issues.push({
+            platform: platform.platform,
+            agent: agent.name,
+            severity: 'info',
+            message: `"${agent.name}" has skills but could not be classified into a role (confidence: ${(meta.confidence * 100).toFixed(0)}%)`,
+            suggestion: 'Add more relevant keywords to the skill definition or set an explicit role field',
           });
         }
       }
@@ -580,6 +595,21 @@ export class Reporter {
 
   _buildSummary(results) {
     const issues = this.diagnose(results);
+    const wfg = new WorkflowGenerator();
+    let unclassifiedCount = 0;
+    let confidenceSum = 0;
+    let classifiedCount = 0;
+
+    for (const platform of results) {
+      wfg.classifyAgents(platform.agents, platform.skills || []);
+      for (const agent of platform.agents) {
+        const meta = wfg._classificationMap[agent.name];
+        if (meta) {
+          if (!meta.classified) { unclassifiedCount++; } else { confidenceSum += meta.confidence; classifiedCount++; }
+        }
+      }
+    }
+
     return {
       totalPlatforms: results.length,
       totalAgents: results.reduce((a, p) => a + p.agents.length, 0),
@@ -590,6 +620,8 @@ export class Reporter {
       suggestions: issues.filter(i => i.severity === 'info').length,
       overallHealth: results.every(p => this._healthColor(p) === 'green') ? 'green'
         : results.some(p => this._healthColor(p) === 'red') ? 'red' : 'yellow',
+      unclassifiedAgents: unclassifiedCount,
+      avgConfidence: classifiedCount > 0 ? Math.round((confidenceSum / classifiedCount) * 100) / 100 : 0,
     };
   }
 
@@ -605,16 +637,78 @@ export class Reporter {
     return color === 'green' ? '🟢' : color === 'yellow' ? '🟡' : '🔴';
   }
 
+  _printAgentSkillMapping(results) {
+    const wfg = new WorkflowGenerator();
+    let hasAnyMapping = false;
+
+    for (const platform of results) {
+      if (platform.agents.length === 0 && platform.skills.length === 0) continue;
+
+      const roles = wfg.classifyAgents(platform.agents, platform.skills || []);
+      const agentsWithSkills = platform.agents.filter(a => a.skills && a.skills.length > 0).length;
+      const skillsReferenced = platform.skills.filter(s => s.agents && s.agents.length > 0).length;
+      const unclassified = platform.agents.filter(a => {
+        const meta = wfg._classificationMap[a.name];
+        return meta && !meta.classified;
+      }).length;
+
+      const confidenceValues = platform.agents.map(a => {
+        const meta = wfg._classificationMap[a.name];
+        return meta ? meta.confidence : 0;
+      }).filter(c => c > 0);
+      const avgConf = confidenceValues.length > 0
+        ? Math.round((confidenceValues.reduce((s, c) => s + c, 0) / confidenceValues.length) * 100) / 100
+        : 0;
+
+      if (platform.agents.length > 0 || platform.skills.length > 0) {
+        hasAnyMapping = true;
+        console.log(`  ${BOLD}📊 Agent-Skill Mapping [${platform.platform}]${RESET}`);
+        console.log(`     Agents with skills:    ${agentsWithSkills}/${platform.agents.length}`);
+        console.log(`     Skills referenced:     ${skillsReferenced}/${platform.skills.length}`);
+        if (unclassified > 0) {
+          console.log(`     ${YELLOW}Unclassified agents:   ${unclassified}${RESET}`);
+        }
+        if (avgConf > 0) {
+          console.log(`     Avg confidence:        ${(avgConf * 100).toFixed(0)}%`);
+        }
+      }
+
+      const suggested = wfg.suggestWorkflows(platform);
+      if (suggested.length > 0) {
+        hasAnyMapping = true;
+        console.log(`\n  ${BOLD}⚡ Suggested Workflows [${platform.platform}]${RESET}`);
+        for (const s of suggested) {
+          const stepConfidences = s.agents.map(aName => {
+            const meta = wfg._classificationMap[aName];
+            return meta ? meta.confidence : 0;
+          });
+          const avg = stepConfidences.length > 0
+            ? Math.round((stepConfidences.reduce((s, c) => s + c, 0) / stepConfidences.length) * 100)
+            : 0;
+          console.log(`     ⚡ ${s.name} — ${s.steps} steps [${s.agents.join(', ')}]  (conf: ${avg}%)`);
+        }
+      }
+
+      if (platform.agents.length > 0 || platform.skills.length > 0 || suggested.length > 0) {
+        console.log();
+      }
+    }
+  }
+
   _printSummary(results) {
     const summary = this._buildSummary(results);
     const icon = summary.overallHealth === 'green' ? '🟢' : summary.overallHealth === 'yellow' ? '🟡' : '🔴';
     console.log(`  ${BOLD}── Summary ──${RESET}`);
     console.log(`  ${icon}  ${summary.totalPlatforms} platform(s), ${summary.totalAgents} agent(s), ${summary.totalSkills} skill(s), ${summary.totalWorkflows} workflow(s)`);
     console.log(`  🔴 ${summary.blockers} blocker(s) | 🟡 ${summary.warnings} warning(s) | ℹ️ ${summary.suggestions} suggestion(s)`);
+    if (summary.unclassifiedAgents > 0) {
+      console.log(`  ${YELLOW}  ${summary.unclassifiedAgents} agent(s) not classified — run validate for details${RESET}`);
+    }
     console.log();
   }
 
   _printNextSteps(results) {
+    const summary = this._buildSummary(results);
     console.log(`  ${BOLD}💡 Next Steps${RESET}`);
     if (results.length === 0) {
       console.log(`   1. Run ${CYAN}tools-dynamic init${RESET} to bootstrap agent configuration`);
@@ -624,6 +718,9 @@ export class Reporter {
       console.log(`   1. Run ${CYAN}tools-dynamic doctor .${RESET} for detailed diagnostics`);
       console.log(`   2. Run ${CYAN}tools-dynamic report .${RESET} to generate full report`);
       console.log(`   3. Run ${CYAN}tools-dynamic init${RESET} to inject tools and processes`);
+      if (summary.unclassifiedAgents > 0 || summary.blockers > 0) {
+        console.log(`   4. Run ${CYAN}tools-dynamic validate .${RESET} for detailed agent-skill diagnostics`);
+      }
     }
     console.log();
   }
