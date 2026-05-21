@@ -8,6 +8,9 @@ function readFileSafe(filePath) {
 function parseAgentFromMd(filePath, content) {
   const { frontmatter, body } = Parser.parseFrontmatter(content);
   const fmName = frontmatter.name || frontmatter.role || basename(filePath, '.md');
+  const rawSkills = Array.isArray(frontmatter.skills)
+    ? frontmatter.skills
+    : (Array.isArray(frontmatter.paths) ? frontmatter.paths : []);
   return {
     name: fmName,
     role: frontmatter.description || frontmatter.role || '',
@@ -17,6 +20,8 @@ function parseAgentFromMd(filePath, content) {
     permissions: { edit: frontmatter.permission?.edit || frontmatter.edit || 'allow', bash: frontmatter.permission?.bash || frontmatter.bash || 'allow' },
     sections: body.split('\n').filter(l => l.startsWith('## ')).map(l => l.replace(/^##\s+/, '').trim()),
     hasHandoff: body.includes('Handoff Protocol'),
+    skills: [],
+    _skillRefs: rawSkills,
   };
 }
 
@@ -32,7 +37,54 @@ function parseSkillFromDir(skillDir) {
     filePath: skillPath,
     references: existsSync(refsDir) ? readdirSync(refsDir).filter(f => f.endsWith('.md')).map(f => join(refsDir, f)) : [],
     crossPlatformSynced: false,
+    role: frontmatter.role || undefined,
   };
+}
+
+export function buildCrossIndex(agents, skills) {
+  const skillMap = {};
+  for (const skill of skills) {
+    skillMap[skill.name.toLowerCase()] = skill;
+    if (!skill.agents) skill.agents = [];
+  }
+  for (const agent of agents) {
+    if (!agent.skills) agent.skills = [];
+    for (const skillName of agent.skills) {
+      const key = skillName.toLowerCase();
+      if (skillMap[key] && !skillMap[key].agents.includes(agent.name)) {
+        skillMap[key].agents.push(agent.name);
+      }
+    }
+  }
+  for (const skill of skills) {
+    for (const agentName of skill.agents) {
+      const agent = agents.find(a => a.name.toLowerCase() === agentName.toLowerCase());
+      if (agent && !agent.skills.includes(skill.name)) {
+        agent.skills.push(skill.name);
+      }
+    }
+  }
+}
+
+function resolveSkillRefs(agents, skills) {
+  const skillMap = {};
+  for (const skill of skills) {
+    skillMap[skill.name.toLowerCase()] = skill;
+    if (!skill.agents) skill.agents = [];
+  }
+  for (const agent of agents) {
+    if (!agent.skills) agent.skills = [];
+    if (!agent._skillRefs || agent._skillRefs.length === 0) continue;
+    for (const ref of agent._skillRefs) {
+      const candidateName = basename(ref).replace(/\.md$/i, '').toLowerCase();
+      const matched = skillMap[candidateName];
+      if (matched) {
+        if (!agent.skills.includes(matched.name)) agent.skills.push(matched.name);
+        if (!matched.agents.includes(agent.name)) matched.agents.push(agent.name);
+      }
+    }
+    delete agent._skillRefs;
+  }
 }
 
 export function scanDotAgent(basePath) {
@@ -98,6 +150,8 @@ export function scanDotAgent(basePath) {
   // Scan .agents first (primary standard), then .agent for backward compatibility.
   scanDir(join(basePath, '.agents'));
   scanDir(join(basePath, '.agent'));
+
+  resolveSkillRefs(agents, skills);
 
   return { agents, skills };
 }

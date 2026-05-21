@@ -96,4 +96,78 @@ describe('WorkflowGenerator', () => {
     assert.ok(testStep);
     assert.ok(testStep.depends_on.includes(buildStep.id));
   });
+
+  test('classifyAgents uses skill when available', () => {
+    const wfg = new WorkflowGenerator();
+    const agents = [
+      { name: 'db-agent', role: 'DB', keywords: ['database'], mode: 'subagent', skills: ['sql-master'] },
+      { name: 'doc-writer', role: 'Writer', keywords: ['write'], mode: 'subagent', skills: ['doc-generator'] },
+    ];
+    const skills = [
+      { name: 'sql-master', keywords: ['database', 'sql', 'schema', 'query'], agents: [] },
+      { name: 'doc-generator', keywords: ['doc', 'readme', 'changelog', 'apidoc'], agents: [] },
+    ];
+    const roles = wfg.classifyAgents(agents, skills);
+    assert.equal(roles.builders.length, 1);
+    assert.equal(roles.writers.length, 1);
+    assert.equal(roles.reviewers.length, 0);
+    assert.equal(roles.testers.length, 0);
+    assert.equal(wfg._classificationMap['db-agent'].method, 'jaccard');
+    assert.equal(wfg._classificationMap['doc-writer'].method, 'jaccard');
+    assert.ok(wfg._classificationMap['db-agent'].confidence >= 0.05);
+  });
+
+  test('classifyAgents respects explicit role override in skill', () => {
+    const wfg = new WorkflowGenerator();
+    const agents = [
+      { name: 'custom-agent', role: 'Custom', keywords: ['xyz', 'abc'], mode: 'subagent', skills: ['explicit-reviewer'] },
+    ];
+    const skills = [
+      { name: 'explicit-reviewer', keywords: ['xyz'], role: 'reviewer', agents: [] },
+    ];
+    const roles = wfg.classifyAgents(agents, skills);
+    assert.equal(roles.reviewers.length, 1);
+    assert.equal(wfg._classificationMap['custom-agent'].method, 'explicit');
+    assert.equal(wfg._classificationMap['custom-agent'].confidence, 1.0);
+    assert.equal(wfg._classificationMap['custom-agent'].classified, true);
+  });
+
+  test('classifyAgents falls back to keywords when skill has no match', () => {
+    const wfg = new WorkflowGenerator();
+    const agents = [
+      { name: 'weird-agent', role: 'Weird', keywords: ['foo', 'bar'], mode: 'subagent', skills: ['unknown-skill'] },
+    ];
+    const skills = [
+      { name: 'unknown-skill', keywords: ['xyz', 'abc', 'zzz'], agents: [] },
+    ];
+    const roles = wfg.classifyAgents(agents, skills);
+    assert.equal(roles.builders.length, 1);
+    assert.equal(wfg._classificationMap['weird-agent'].classified, false);
+    assert.equal(wfg._classificationMap['weird-agent'].method, 'keyword');
+  });
+
+  test('generate includes step.skill in workflow steps', () => {
+    const wfg = new WorkflowGenerator();
+    const agents = [
+      { name: 'reviewer-one', role: 'Reviewer', keywords: ['review', 'quality'], mode: 'subagent', skills: ['code-review'] },
+      { name: 'doc-writer', role: 'Writer', keywords: ['doc', 'readme'], mode: 'subagent', skills: ['doc-generator'] },
+    ];
+    const skills = [
+      { name: 'code-review', keywords: ['review', 'quality', 'audit', 'lint'], agents: [] },
+      { name: 'doc-generator', keywords: ['doc', 'readme', 'changelog'], agents: [] },
+    ];
+    const scanResult = {
+      agents,
+      skills,
+      platform: 'opencode',
+      nativeCapabilities: { agentTeams: false },
+    };
+    const workflows = wfg.generate(scanResult);
+    const reviewWf = workflows.find(w => w.name === 'review-pipeline');
+    assert.ok(reviewWf);
+    for (const step of reviewWf.steps) {
+      assert.ok(step.skill !== undefined, `step ${step.id} should have skill field`);
+    }
+    assert.equal(reviewWf.steps[0].skill, 'code-review');
+  });
 });
