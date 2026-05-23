@@ -16,30 +16,32 @@ Agregar una opción "❌ Cancel / Exit" al final de cada prompt de selección.
 
 #### Archivo: `tools_dynamic/index.mjs`
 
-**Prompt de plataformas** (línea ~200-210):
+**Prompt de plataformas** (línea ~205-218):
 
 ```js
-const { platforms } = await inquirer.prompt([{
-  type: 'checkbox',
-  name: 'platforms',
-  message: 'Select target platform(s) to configure:',
+const { platform } = await inquirer.prompt([{
+  type: 'list',
+  name: 'platform',
+  message: 'Select target platform to configure:',
   choices: [
-    { name: 'OpenCode (.opencode/, AGENTS.md)', value: 'opencode', checked: true },
-    { name: 'VS Code / Copilot (.github/copilot-instructions.md)', value: 'vscode', checked: false },
-    { name: 'Claude Code (CLAUDE.md, .claude/)', value: 'claude', checked: false },
-    { name: 'Antigravity (antigravity.yaml)', value: 'antigravity', checked: false },
-    { name: new inquirer.Separator() },
+    { name: 'OpenCode (.opencode/, AGENTS.md)', value: 'opencode' },
+    { name: 'VS Code / Copilot (.github/copilot-instructions.md)', value: 'vscode' },
+    { name: 'Claude Code (CLAUDE.md, .claude/)', value: 'claude' },
+    { name: 'Antigravity (antigravity.yaml)', value: 'antigravity' },
+    { name: 'Generic (.agents/ convention)', value: 'vanilla' },
+    new inquirer.Separator(),
     { name: '❌ Cancel / Exit', value: '__exit__' },
   ],
 }]);
-
-if (platforms.includes('__exit__')) {
+if (platform === '__exit__') {
   console.log(`\n  ${YELLOW}Exiting. No changes made.${RESET}\n`);
   return;
 }
 ```
 
-**Prompt de componentes** (línea ~219-231):
+> **Nota**: Se usa `type: 'list'` (no checkbox) para selección única. El `Separator` se coloca **directamente** en el array de choices, no envuelto en `{name: ...}`, para evitar el error `[object Object]` en `@inquirer/prompts` v4+.
+
+**Prompt de componentes** (línea ~227-253):
 
 ```js
 const { components } = await inquirer.prompt([{
@@ -49,13 +51,17 @@ const { components } = await inquirer.prompt([{
   choices: [
     { name: '🤖 Agent Definitions (AGENTS.md + agent .md files)', value: 'agents', checked: true },
     { name: '📚 Skill Definitions (SKILL.md + references)', value: 'skills', checked: true },
-    { name: '⚙️  Platform Config (opencode.json, GEMINI.md, etc.)', value: 'platformConfig', checked: true },
-    // ... resto de opciones
-    { name: new inquirer.Separator() },
+    { name: '⚙️  Platform Config (opencode.json, GEMINI.md, copilot-instructions.md)', value: 'platformConfig', checked: true },
+    new inquirer.Separator(),
+    { name: '📦 Agent Testing Framework (run.mjs + cases)', value: 'testing', checked: true },
+    { name: '📊 Agent Performance Metrics (report.mjs)', value: 'metrics', checked: true },
+    { name: '⚡ Multi-Agent Workflows (definitions + executor)', value: 'workflows', checked: true },
+    { name: '📋 Docs/Processes (documentation templates)', value: 'processes', checked: false },
+    { name: '🧠 Context Manager (token estimation + compaction tool)', value: 'context', checked: true },
+    new inquirer.Separator(),
     { name: '❌ Cancel / Exit', value: '__exit__' },
   ],
 }]);
-
 if (components.includes('__exit__')) {
   console.log(`\n  ${YELLOW}Exiting. No changes made.${RESET}\n`);
   return;
@@ -64,9 +70,10 @@ if (components.includes('__exit__')) {
 
 ### Comportamiento esperado
 
-- Si el usuario selecciona "❌ Cancel / Exit" en cualquier paso → mensaje "Exiting. No changes made." y `return`
-- El separador `inquirer.Separator()` visualmente agrupa la opción de salida aparte
-- Ningún archivo se modifica
+- **Prompt de plataformas** (`type: 'list'`): Enter selecciona la opción resaltada. "❌ Cancel / Exit" sale inmediatamente.
+- **Prompt de componentes** (`type: 'checkbox'`): Si el usuario selecciona "❌ Cancel / Exit" → mensaje "Exiting. No changes made." y `return`
+- El separador `new inquirer.Separator()` se coloca **directamente** en el array de choices (no envuelto en `{name: ...}`) para compatibilidad con `@inquirer/prompts` v4+
+- Ningún archivo se modifica al cancelar
 
 ---
 
@@ -376,10 +383,10 @@ Target platform for --yes mode (opencode, vscode, claude, antigravity)
 
 | Archivo | Fixes | Tipo de cambio |
 |---|---|---|
-| `tools_dynamic/index.mjs` | 1, 2, 3, 5 | Estructural: prompts, flags, makeSyntheticResult |
+| `tools_dynamic/index.mjs` | 1, 2, 3, 5, D | Estructural: prompts (list), flags, makeSyntheticResult, vanilla, exit |
 | `tools_dynamic/commands/inject.mjs` | 3 | Aditivo: nuevos flags |
-| `tools_dynamic/core/injector.mjs` | 3 | Estructural: plan() con componentes separados |
-| `tools_dynamic/core/reporter.mjs` | 4 | Aditivo: mención vanilla |
+| `tools_dynamic/core/injector.mjs` | 3, M | Estructural: plan() con componentes separados + multi-platform merge AGENTS.md |
+| `tools_dynamic/core/reporter.mjs` | 4, D | Aditivo: mención vanilla + vanilla en printPlatforms |
 | `tools_dynamic/tests/injector.test.mjs` | 3 | Aditivo: 3 nuevos tests |
 
 ---
@@ -397,15 +404,101 @@ Target platform for --yes mode (opencode, vscode, claude, antigravity)
 
 ## Verificación de Retrocompatibilidad
 
-| Escenario | Comportamiento esperado |
-|---|---|
-| `node tools_dynamic/index.mjs init .` | Sigue igual, pero con opciones separadas + exit |
-| `node tools_dynamic/index.mjs init . --yes` | Sin cambios |
-| `node tools_dynamic/index.mjs inject . --config` | Sigue igual (bundle) |
-| `node tools_dynamic/index.mjs inject . --agents` | Nuevo: solo agentes |
-| `node tools_dynamic/index.mjs validate .` | Sin cambios |
-| `node tools_dynamic/index.mjs update .` | Sin cambios |
-| `node --test tools_dynamic/tests/*.test.mjs` | 178 → 178+ tests, todos pasan |
+| Escenario | Comportamiento esperado | Estado |
+|---|---|---|
+| `node tools_dynamic/index.mjs init .` | Sigue igual, pero con opciones separadas + exit | ✅ |
+| `node tools_dynamic/index.mjs init . --yes` | Sin cambios | ✅ |
+| `node tools_dynamic/index.mjs inject . --config` | Sigue igual (bundle) | ✅ |
+| `node tools_dynamic/index.mjs inject . --agents` | Nuevo: solo agentes | ✅ |
+| `node tools_dynamic/index.mjs inject . --skills` | Nuevo: solo skills | ✅ |
+| `node tools_dynamic/index.mjs inject . --platform-config` | Nuevo: solo platform config | ✅ |
+| `node tools_dynamic/index.mjs validate .` | Sin cambios | ✅ |
+| `node tools_dynamic/index.mjs update .` | Sin cambios | ✅ |
+| `node --test tools_dynamic/tests/*.test.mjs` | 181 tests, todos pasan | ✅ |
+
+---
+
+## Mejora Post-Fix — Option D: List para plataformas
+
+### Problema
+
+El checkbox de plataformas permitía seleccionar múltiples plataformas a la vez, pero en la práctica el usuario casi siempre selecciona una sola. Además, la opción "❌ Cancel / Exit" dentro de un checkbox requiere marcar con espacio + Enter, lo cual no es intuitivo.
+
+### Solución
+
+Cambiar el prompt de plataformas a `type: 'list'` para selección única + Enter directo:
+
+```js
+const { platform } = await inquirer.prompt([{
+  type: 'list',
+  name: 'platform',
+  message: 'Select target platform to configure:',
+  choices: [
+    { name: 'OpenCode (.opencode/, AGENTS.md)', value: 'opencode' },
+    { name: 'VS Code / Copilot (.github/copilot-instructions.md)', value: 'vscode' },
+    { name: 'Claude Code (CLAUDE.md, .claude/)', value: 'claude' },
+    { name: 'Antigravity (antigravity.yaml)', value: 'antigravity' },
+    { name: 'Generic (.agents/ convention)', value: 'vanilla' },
+    new inquirer.Separator(),
+    { name: '❌ Cancel / Exit', value: '__exit__' },
+  ],
+}]);
+if (platform === '__exit__') {
+  console.log(`\n  ${YELLOW}Exiting. No changes made.${RESET}\n`);
+  return;
+}
+results = [makeSyntheticResult(platform, targetPath)];
+```
+
+El prompt de componentes se mantiene como `checkbox` con opción `__exit__`.
+
+### Cambio clave
+
+El `Separator` debe colocarse DIRECTO en el array (no como `{name: new inquirer.Separator()}`) porque `@inquirer/prompts` v4+ reconoce `{type: 'separator'}` solo cuando el choice es una instancia directa de `Separator`, no cuando está envuelta en un objeto.
+
+---
+
+## Mejora Post-Fix — Multi-platform AGENTS.md Merge
+
+### Problema
+
+Al ejecutar `init` para múltiples plataformas en runs separados, el AGENTS.md se regeneraba mencionando solo la plataforma del run actual, perdiendo las referencias a plataformas configuradas en runs anteriores.
+
+### Solución
+
+En `injector.plan()`, antes de generar AGENTS.md, detectar qué plataformas tienen directorios/archivos existentes en disco y fusionarlas con la selección actual:
+
+```js
+if (platformsForConfig.length > 0) {
+  const globalVars = this.resolveVariablesFromScan(platformsForConfig, targetPath);
+  let activePlatforms = platformsForConfig.map(p => p.platform);
+  const existingPlatformDirs = {
+    opencode: join(targetPath, '.opencode'),
+    vanilla: join(targetPath, '.agents'),
+    vscode: join(targetPath, '.github', 'copilot-instructions.md'),
+    claude: join(targetPath, 'CLAUDE.md'),
+    antigravity: join(targetPath, 'antigravity.yaml'),
+  };
+  for (const [plat, dirPath] of Object.entries(existingPlatformDirs)) {
+    if (existsSync(dirPath) && !activePlatforms.includes(plat)) {
+      activePlatforms.push(plat);
+    }
+  }
+  const combinedContent = this.generateCombinedAgentsMd(globalVars.projectName, activePlatforms);
+  // ...
+}
+```
+
+Además, se agregó `vanilla` a `generateCombinedAgentsMd()`:
+
+```js
+if (activePlatforms.includes('vanilla')) aiFacingFilesList.push('.agents');
+```
+
+### Comportamiento
+
+1. Primer run: `init` para `opencode` → crea `.opencode/` + AGENTS.md mencionando opencode
+2. Segundo run: `init` para `vanilla` → detecta `.opencode/` existente → AGENTS.md menciona **ambas** plataformas
 
 ---
 

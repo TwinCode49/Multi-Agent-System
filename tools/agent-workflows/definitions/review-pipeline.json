@@ -1,0 +1,66 @@
+{
+  "name": "review-pipeline",
+  "version": "1.0",
+  "description": "Review code with multiple reviewers and synthesize results",
+  "trigger_keywords": [
+    "review",
+    "audit",
+    "code quality"
+  ],
+  "steps": [
+    {
+      "id": "code-reviewer_review",
+      "agent": "code-reviewer",
+      "prompt": "Review the code for issues. Output structured findings.",
+      "output_key": "code-reviewer_review",
+      "depends_on": []
+    },
+    {
+      "id": "synthesis",
+      "agent": "doc-agent",
+      "skill": "documentation",
+      "prompt": "Synthesize the review findings into a unified report.",
+      "output_key": "final_report",
+      "depends_on": [
+        "code-reviewer_review"
+      ]
+    }
+  ],
+  "synthesizer": {
+    "agent": "orchestrator",
+    "enabled": true,
+    "prompt": "Synthesize review findings into a unified report. Resolve conflicts between agents.",
+    "input_from": [
+      "code-reviewer_review"
+    ]
+  },
+  "format": "executor-json",
+  "platform": "opencode",
+  "agent_skills": {
+    "code-reviewer": [],
+    "database-specialist": [
+      "database"
+    ],
+    "devops-agent": [
+      "containerization"
+    ],
+    "doc-agent": [
+      "documentation"
+    ],
+    "orchestrator": [],
+    "perf-engineer": [
+      "backend",
+      "database"
+    ],
+    "security-reviewer": [
+      "backend",
+      "containerization"
+    ],
+    "test-engineer": [
+      "testing"
+    ],
+    "ui-specialist": [
+      "frontend"
+    ]
+  }
+}

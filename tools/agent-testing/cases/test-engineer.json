@@ -1,15 +1,30 @@
 {
-  "agent": "test-engineer",
-  "type": "secondary",
-  "checks": {
-    "frontmatter": {
-      "description": "starts with TRIGGER KEYWORDS:",
-      "mode": "subagent",
-      "permission": { "edit": "allow", "bash": "allow" }
-    },
-    "keywords": ["test", "coverage", "spec", "pytest", "jest", "unittest", "TDD", "BDD"],
-    "sections": ["Core Responsibilities", "Behavior Rules", "Response Format", "Constraints", "Handoff Protocol"],
-    "contains": ["AAA", "deterministic", "it.only", "mock", "regression test"],
-    "readOnly": false
-  }
+  "name": "test-engineer",
+  "keywords": [
+    "test",
+    "coverage",
+    "spec",
+    "pytest",
+    "jest",
+    "unittest",
+    "tdd",
+    "bdd"
+  ],
+  "expectedKeywords": 10,
+  "sectionsRequired": [
+    "Core Responsibilities",
+    "Behavior Rules",
+    "Response Format",
+    "Constraints",
+    "Handoff Protocol"
+  ],
+  "modeExpected": "subagent",
+  "permissionsExpected": {
+    "edit": "allow",
+    "bash": "allow"
+  },
+  "hasHandoffExpected": true,
+  "skills": [
+    "testing"
+  ]
 }

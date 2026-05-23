@@ -1,15 +1,28 @@
 {
-  "agent": "database-specialist",
-  "type": "secondary",
-  "checks": {
-    "frontmatter": {
-      "description": "starts with TRIGGER KEYWORDS:",
-      "mode": "subagent",
-      "permission": { "edit": "allow", "bash": "allow" }
-    },
-    "keywords": ["database", "SQL", "query", "schema", "migration", "ORM", "PostgreSQL", "index"],
-    "sections": ["Core Responsibilities", "Behavior Rules", "Response Format", "Constraints", "Handoff Protocol"],
-    "contains": ["EXPLAIN ANALYZE", "parameterized queries", "rollback", "N+1"],
-    "readOnly": false
-  }
+  "name": "database-specialist",
+  "keywords": [
+    "database",
+    "sql",
+    "query",
+    "schema",
+    "migration",
+    "orm"
+  ],
+  "expectedKeywords": 10,
+  "sectionsRequired": [
+    "Core Responsibilities",
+    "Behavior Rules",
+    "Response Format",
+    "Constraints",
+    "Handoff Protocol"
+  ],
+  "modeExpected": "subagent",
+  "permissionsExpected": {
+    "edit": "allow",
+    "bash": "allow"
+  },
+  "hasHandoffExpected": true,
+  "skills": [
+    "database"
+  ]
 }

@@ -21,8 +21,14 @@ export async function runInject(targetPath, options) {
   const results = scanner.scanAll(targetPath);
 
   const components = [];
-  if (options.config || options.all) {
-    components.push('config');
+  if (options.agents || options.config || options.all) {
+    components.push('agents');
+  }
+  if (options.skills || options.config || options.all) {
+    components.push('skills');
+  }
+  if (options.platformConfig || options.config || options.all) {
+    components.push('platformConfig');
   }
   if (options.tools || options.all) {
     components.push('testing', 'metrics', 'workflows');

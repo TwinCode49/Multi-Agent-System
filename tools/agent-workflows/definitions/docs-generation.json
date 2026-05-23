@@ -1,36 +1,59 @@
 {
   "name": "docs-generation",
-  "version": "2.0",
-  "description": "Analyze code and generate comprehensive documentation",
-  "trigger_keywords": ["generate docs", "document code", "auto-document"],
+  "version": "1.0",
+  "description": "Analyze code and generate documentation",
+  "trigger_keywords": [
+    "docs",
+    "documentation",
+    "generate docs"
+  ],
   "steps": [
     {
-      "id": "api_inventory",
-      "agent": "code-reviewer",
-      "prompt": "Analyze the codebase structure: list all public APIs, exports, interfaces, types, and their relationships.",
-      "output_key": "api_inventory",
+      "id": "database-specialist_inventory",
+      "agent": "database-specialist",
+      "skill": "database",
+      "prompt": "Analyze the codebase and produce an inventory of APIs, components, and configurations.",
+      "output_key": "database-specialist_inventory",
       "depends_on": []
     },
     {
-      "id": "readme",
+      "id": "doc-agent_docs",
       "agent": "doc-agent",
-      "prompt": "Generate or update the project README based on the code analysis. Include: overview, installation, usage examples, API reference, contributing guide.",
-      "output_key": "readme",
-      "depends_on": ["api_inventory"]
-    },
-    {
-      "id": "apidocs",
-      "agent": "doc-agent",
-      "prompt": "Generate OpenAPI/Swagger specs or JSDoc annotations for all public endpoints and functions identified in the analysis.",
-      "output_key": "api_docs",
-      "depends_on": ["api_inventory"]
-    },
-    {
-      "id": "changelog",
-      "agent": "doc-agent",
-      "prompt": "Update the CHANGELOG following Keep a Changelog format based on recent git history and the code analysis.",
-      "output_key": "changelog",
-      "depends_on": ["api_inventory"]
+      "skill": "documentation",
+      "prompt": "Generate documentation based on the code inventory.",
+      "output_key": "doc-agent_docs",
+      "depends_on": [
+        "database-specialist_inventory"
+      ]
     }
-  ]
+  ],
+  "format": "executor-json",
+  "platform": "opencode",
+  "agent_skills": {
+    "code-reviewer": [],
+    "database-specialist": [
+      "database"
+    ],
+    "devops-agent": [
+      "containerization"
+    ],
+    "doc-agent": [
+      "documentation"
+    ],
+    "orchestrator": [],
+    "perf-engineer": [
+      "backend",
+      "database"
+    ],
+    "security-reviewer": [
+      "backend",
+      "containerization"
+    ],
+    "test-engineer": [
+      "testing"
+    ],
+    "ui-specialist": [
+      "frontend"
+    ]
+  }
 }

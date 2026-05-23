@@ -66,7 +66,7 @@ export function buildCrossIndex(agents, skills) {
   }
 }
 
-function resolveSkillRefs(agents, skills) {
+export function resolveSkillRefs(agents, skills) {
   const skillMap = {};
   for (const skill of skills) {
     skillMap[skill.name.toLowerCase()] = skill;

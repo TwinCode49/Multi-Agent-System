@@ -161,6 +161,28 @@ describe('Injector', () => {
       }
     });
 
+    it('plan with agents only does not inject skills', () => {
+      const testPlan = injector.plan(mockScan, testTarget, ['agents']);
+      const hasSkills = testPlan.create.some(e => norm(e.path).includes('/skills/') || norm(e.path).includes('SKILL.md'));
+      const hasConfig = testPlan.create.some(e => norm(e.path).includes('opencode.json'));
+      assert.ok(!hasSkills, 'Should not inject skill files');
+      assert.ok(!hasConfig, 'Should not inject platform config');
+    });
+
+    it('plan with skills only does not inject agents', () => {
+      const testPlan = injector.plan(mockScan, testTarget, ['skills']);
+      const hasAgents = testPlan.create.some(e => norm(e.path).includes('/agents/'));
+      assert.ok(!hasAgents, 'Should not inject agent files');
+    });
+
+    it('plan with config bundle produces same result as agents+skills+platformConfig', () => {
+      const bundlePlan = injector.plan(mockScan, testTarget, ['config']);
+      const individualPlan = injector.plan(mockScan, testTarget, ['agents', 'skills', 'platformConfig']);
+      const bundleCreatePaths = bundlePlan.create.map(e => norm(e.path)).sort();
+      const individualCreatePaths = individualPlan.create.map(e => norm(e.path)).sort();
+      assert.deepStrictEqual(bundleCreatePaths, individualCreatePaths, 'config bundle should match agents+skills+platformConfig');
+    });
+
     it('combines AGENTS.md dynamically for multiple platforms', () => {
       const multiPlatformScan = [
         { platform: 'opencode', agents: [], skills: [], configPaths: [], nativeCapabilities: {} },

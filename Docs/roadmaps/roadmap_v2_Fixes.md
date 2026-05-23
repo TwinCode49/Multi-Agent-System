@@ -1,8 +1,8 @@
 # v2.0 — Fixes Roadmap
 
-> **Versión**: 2.0
-> **Estado**: 🟡 En planificación
-> **Última revisión**: 2026-05-21
+> **Versión**: 2.1
+> **Estado**: ✅ Completado
+> **Última revisión**: 2026-05-23
 > **Plan de implementación**: `Docs/FASE-2-Fixes.md`
 
 ## Visión General
@@ -14,15 +14,20 @@ Corregir problemas detectados post-estabilización en el flujo interactivo de `t
 4. Omisión de la opción vanilla en `doctor`/`analyze`
 5. Help text desactualizado
 
+### Mejoras adicionales post-implementación
+- **Option D**: Prompt de plataformas cambiado de `checkbox` a `list` para selección única + Exit directo
+- **Multi-platform AGENTS.md merge**: Al generar AGENTS.md, detecta plataformas existentes en disco y las fusiona con la selección actual, permitiendo ejecutar `init` para múltiples plataformas en runs separados sin perder referencias
+- **Limpieza de artefactos residuales**: Se eliminaron archivos de test/template que contaminaban el escaneo (`.github/agents/`, `.github/skills/`, `context-steward.md`, skills inyectadas incorrectamente en agentes existentes)
+
 ---
 
 ## Fix 1 — Salida en `init` interactivo
 
 Agregar opción explícita "❌ Cancel / Exit" en los prompts de selección de plataformas y componentes. Si el usuario la selecciona, el comando termina inmediatamente sin modificar nada.
 
-- [ ] **1.1** Agregar opción `__exit__` en prompt de plataformas
-- [ ] **1.2** Agregar opción `__exit__` en prompt de componentes
-- [ ] **1.3** Manejar `__exit__` con mensaje claro y `return`
+- [x] **1.1** Agregar opción `__exit__` en prompt de plataformas
+- [x] **1.2** Agregar opción `__exit__` en prompt de componentes
+- [x] **1.3** Manejar `__exit__` con mensaje claro y `return`
 
 ---
 
@@ -30,10 +35,10 @@ Agregar opción explícita "❌ Cancel / Exit" en los prompts de selección de p
 
 Agregar `vanilla` como 5ª plataforma sintética que usa la convención genérica `.agents/agents/` y `.agents/skills/`.
 
-- [ ] **2.1** Agregar `vanilla` a `makeSyntheticResult()` en `index.mjs`
-- [ ] **2.2** Agregar `vanilla` a la lista de plataformas en `init` interactivo
-- [ ] **2.3** Agregar `vanilla` a la descripción de `--platform`
-- [ ] **2.4** Garantizar que `injector.plan()` maneje vanilla correctamente
+- [x] **2.1** Agregar `vanilla` a `makeSyntheticResult()` en `index.mjs`
+- [x] **2.2** Agregar `vanilla` a la lista de plataformas en `init` interactivo
+- [x] **2.3** Agregar `vanilla` a la descripción de `--platform`
+- [x] **2.4** Garantizar que `injector.plan()` maneje vanilla correctamente
 
 ---
 
@@ -41,12 +46,12 @@ Agregar `vanilla` como 5ª plataforma sintética que usa la convención genéric
 
 Desacoplar la opción `config` en tres componentes independientes para permitir inyección granular.
 
-- [ ] **3.1** Separar checkbox "Agents + Skills + Config" en tres opciones individuales en `init`
-- [ ] **3.2** Agregar flags `--agents`, `--skills`, `--platform-config` en `inject`
-- [ ] **3.3** Modificar `injector.plan()` para procesar `agents`, `skills`, `platformConfig` como componentes separados
-- [ ] **3.4** Mantener `--config` como bundle retrocompatible
-- [ ] **3.5** Tests: `plan()` con componentes separados
-- [ ] **3.6** Tests: `--config` bundle sigue funcionando
+- [x] **3.1** Separar checkbox "Agents + Skills + Config" en tres opciones individuales en `init`
+- [x] **3.2** Agregar flags `--agents`, `--skills`, `--platform-config` en `inject`
+- [x] **3.3** Modificar `injector.plan()` para procesar `agents`, `skills`, `platformConfig` como componentes separados
+- [x] **3.4** Mantener `--config` como bundle retrocompatible
+- [x] **3.5** Tests: `plan()` con componentes separados
+- [x] **3.6** Tests: `--config` bundle sigue funcionando
 
 ---
 
@@ -54,8 +59,8 @@ Desacoplar la opción `config` en tres componentes independientes para permitir 
 
 Cuando no se detectan plataformas, sugerir explícitamente la opción `.agents/` como alternativa genérica.
 
-- [ ] **4.1** Actualizar `reporter.mjs` (`printAnalysis`) para mencionar `--platform vanilla`
-- [ ] **4.2** Actualizar `doctor` output para sugerir vanilla
+- [x] **4.1** Actualizar `reporter.mjs` (`printAnalysis`) para mencionar `--platform vanilla`
+- [x] **4.2** Actualizar `doctor` output para sugerir vanilla
 
 ---
 
@@ -63,18 +68,34 @@ Cuando no se detectan plataformas, sugerir explícitamente la opción `.agents/`
 
 Actualizar descripciones de flags para reflejar todas las plataformas disponibles.
 
-- [ ] **5.1** Actualizar `--platform` description en `index.mjs`
+- [x] **5.1** Actualizar `--platform` description en `index.mjs`
 
 ---
 
-## Verificación Final
+## Mejora Post-Fix — Option D
 
-- [ ] **V.1** `init` interactivo — opción Exit funciona en cada paso
-- [ ] **V.2** `init --yes --platform vanilla` — crea estructura `.agents/`
-- [ ] **V.3** `inject --agents` — solo inyecta agentes, no skills
-- [ ] **V.4** `inject --skills` — solo inyecta skills, no agentes
-- [ ] **V.5** `inject --config` — bundle completo sigue funcionando
-- [ ] **V.6** 178 tests siguen pasando
+Cambiar el prompt de selección de plataformas de `checkbox` (múltiple) a `list` (único) para mejorar UX:
+
+- [x] **D.1** Cambiar `type: 'checkbox'` a `type: 'list'` en prompt de plataformas
+- [x] **D.2** Mantener `type: 'checkbox'` con `__exit__` en prompt de componentes
+- [x] **D.3** Separadores visuales con `inquirer.Separator` directo en array (no envuelto en `{name}`)
+
+## Mejora Post-Fix — Multi-platform AGENTS.md Merge
+
+Al generar AGENTS.md, detectar automáticamente qué plataformas tienen directorios/archivos existentes en disco y fusionarlas:
+
+- [x] **M.1** Detectar `.opencode/`, `.agents/`, `.github/copilot-instructions.md`, `CLAUDE.md`, `antigravity.yaml`
+- [x] **M.2** Fusionar plataformas existentes con las del run actual
+- [x] **M.3** Agregar `vanilla` a `generateCombinedAgentsMd()` (AI-facing files lista `.agents`)
+
+---
+
+- [x] **V.1** `init` interactivo — opción Exit funciona en cada paso
+- [x] **V.2** `init --yes --platform vanilla` — crea estructura `.agents/`
+- [x] **V.3** `inject --agents` — solo inyecta agentes, no skills
+- [x] **V.4** `inject --skills` — solo inyecta skills, no agentes
+- [x] **V.5** `inject --config` — bundle completo sigue funcionando
+- [x] **V.6** 181 tests siguen pasando
 
 ---
 
@@ -82,12 +103,16 @@ Actualizar descripciones de flags para reflejar todas las plataformas disponible
 
 | Métrica | Objetivo | Actual |
 |---|---|---|
-| Tests totales | ≥ 178 | 178 |
+| Tests totales | ≥ 178 | 181 |
 | Tests pasando | 100% | 100% |
-| Fixes completados | 5/5 | 0/5 |
-| Nuevas opciones de plataforma | 1 (vanilla) | 0 |
-| Opciones de salida en init | ≥ 2 | 0 |
+| Fixes completados | 5/5 | **5/5** |
+| Mejoras post-fix | — | **2** (Option D + Multi-platform merge) |
+| Nuevas opciones de plataforma | 1 (vanilla) | 1 |
+| Opciones de salida en init | ≥ 2 | 2 |
 | Retrocompatibilidad | Sin breaks | ✅ |
+| Artefactos residuales eliminados | — | 6 directorios, 3 archivos |
+| Agentes con skills correctas | 7/9 | 7/9 |
+| Skills referenciadas | 6/8 | 6/8 |
 
 ---
 

@@ -87,6 +87,7 @@ program
             console.log(`  ${CYAN}ℹ️  Vanilla project detected: ${vanilla.language}${RESET}`);
             if (vanilla.framework) console.log(`  ${CYAN}   Framework: ${vanilla.framework}${RESET}`);
             console.log(`  ${CYAN}   Recommended skills: ${detector.suggestSkills(vanilla).slice(0, 5).join(', ')}${RESET}`);
+            console.log(`  ${CYAN}   Or use --platform vanilla for the generic .agents/ convention${RESET}`);
             console.log(`  ${CYAN}   Run 'init --yes' to bootstrap with agent config and tools.${RESET}\n`);
           }
         } catch {}
@@ -108,24 +109,28 @@ function makeSyntheticResult(platformName, targetPath) {
     vscode: '.github',
     claude: '.claude',
     antigravity: '.agent',
+    vanilla: '.agents',
   };
   const agentsDirMap = {
     opencode: '.opencode/agents',
     vscode: '.github/agents',
     claude: '.claude/agents',
     antigravity: '.agent/rules',
+    vanilla: '.agents/agents',
   };
   const skillsDirMap = {
     opencode: '.opencode/skills',
     vscode: '.github/skills',
     claude: '.claude/skills',
     antigravity: '.agent/rules',
+    vanilla: '.agents/skills',
   };
   const configPathsMap = {
     opencode: ['.opencode', 'AGENTS.md'],
     vscode: ['.github/copilot-instructions.md'],
     claude: ['CLAUDE.md'],
     antigravity: ['antigravity.yaml'],
+    vanilla: ['.agents', 'AGENTS.md'],
   };
   return {
     platform: platformName,
@@ -155,7 +160,7 @@ program
   .description('Full interactive bootstrap (combines analyze + inject)')
   .option('--dry-run', 'Show diff without writing')
   .option('--yes', 'Non-interactive mode (use defaults)')
-  .option('--platform <name>', 'Target platform for --yes mode (opencode, vscode, claude, antigravity)')
+  .option('--platform <name>', 'Target platform for --yes mode (opencode, vscode, claude, antigravity, vanilla)')
   .action(async (path, options) => {
     const targetPath = path || '.';
     const scanner = new Scanner();
@@ -172,7 +177,7 @@ program
         results = [makeSyntheticResult(platformName, targetPath)];
         console.log(`  ${CYAN}ℹ️  Using platform: ${platformName}${RESET}\n`);
       }
-      const defaultComponents = ['config', 'testing', 'metrics', 'workflows', 'processes', 'context'];
+      const defaultComponents = ['agents', 'skills', 'platformConfig', 'testing', 'metrics', 'workflows', 'processes', 'context'];
       console.log(`  ${CYAN}⚡ Non-interactive mode: injecting with defaults...${RESET}\n`);
       const plan = injector.plan(results, targetPath, defaultComponents);
       const executeResult = injector.execute(plan, targetPath, {
@@ -197,23 +202,26 @@ program
     if (results.length === 0) {
       await reporter.printAnalysis(results, targetPath);
       console.log(`\n  ${YELLOW}No agent platforms detected.${RESET}`);
-      const { platforms } = await inquirer.prompt([{
-        type: 'checkbox',
-        name: 'platforms',
-        message: 'Select target platform(s) to configure:',
+      const { platform } = await inquirer.prompt([{
+        type: 'list',
+        name: 'platform',
+        message: 'Select target platform to configure:',
         choices: [
-          { name: 'OpenCode (.opencode/, AGENTS.md)', value: 'opencode', checked: true },
-          { name: 'VS Code / Copilot (.github/copilot-instructions.md)', value: 'vscode', checked: false },
-          { name: 'Claude Code (CLAUDE.md, .claude/)', value: 'claude', checked: false },
-          { name: 'Antigravity (antigravity.yaml)', value: 'antigravity', checked: false },
+          { name: 'OpenCode (.opencode/, AGENTS.md)', value: 'opencode' },
+          { name: 'VS Code / Copilot (.github/copilot-instructions.md)', value: 'vscode' },
+          { name: 'Claude Code (CLAUDE.md, .claude/)', value: 'claude' },
+          { name: 'Antigravity (antigravity.yaml)', value: 'antigravity' },
+          { name: 'Generic (.agents/ convention)', value: 'vanilla' },
+          new inquirer.Separator(),
+          { name: '❌ Cancel / Exit', value: '__exit__' },
         ],
       }]);
-      if (platforms.length === 0) {
-        console.log(`\n  ${YELLOW}No platform selected. Skipping.${RESET}\n`);
+      if (platform === '__exit__') {
+        console.log(`\n  ${YELLOW}Exiting. No changes made.${RESET}\n`);
         return;
       }
-      results = platforms.map(p => makeSyntheticResult(p, targetPath));
-      console.log(`\n  ${CYAN}ℹ️  Configuring ${platforms.length} platform(s): ${platforms.join(', ')}${RESET}\n`);
+      results = [makeSyntheticResult(platform, targetPath)];
+      console.log(`\n  ${CYAN}ℹ️  Configuring platform: ${platform}${RESET}\n`);
     }
 
     const { components } = await inquirer.prompt([{
@@ -221,15 +229,24 @@ program
       name: 'components',
       message: 'Select components to bootstrap:',
       choices: [
-        { name: '🤖 Agents + Skills + Config (AGENTS.md, opencode.json, agent/skill definitions)', value: 'config', checked: true },
+        { name: '🤖 Agent Definitions (AGENTS.md + agent .md files)', value: 'agents', checked: true },
+        { name: '📚 Skill Definitions (SKILL.md + references)', value: 'skills', checked: true },
+        { name: '⚙️  Platform Config (opencode.json, GEMINI.md, copilot-instructions.md)', value: 'platformConfig', checked: true },
+        new inquirer.Separator(),
         { name: '📦 Agent Testing Framework (run.mjs + cases)', value: 'testing', checked: true },
         { name: '📊 Agent Performance Metrics (report.mjs)', value: 'metrics', checked: true },
         { name: '⚡ Multi-Agent Workflows (definitions + executor)', value: 'workflows', checked: true },
         { name: '📋 Docs/Processes (documentation templates)', value: 'processes', checked: false },
         { name: '🧠 Context Manager (token estimation + compaction tool)', value: 'context', checked: true },
+        new inquirer.Separator(),
+        { name: '❌ Cancel / Exit', value: '__exit__' },
       ],
     }]);
 
+    if (components.includes('__exit__')) {
+      console.log(`\n  ${YELLOW}Exiting. No changes made.${RESET}\n`);
+      return;
+    }
     if (components.length === 0) {
       console.log(`\n  ${YELLOW}No components selected. Skipping.${RESET}\n`);
       return;
@@ -310,14 +327,18 @@ program
   .command('inject [path]')
   .description('Inject selected tools into project')
   .option('--dry-run', 'Show diff without writing')
-  .option('--config', 'Inject agent/skill/config definitions only')
+  .option('--agents', 'Inject agent definitions only')
+  .option('--skills', 'Inject skill definitions only')
+  .option('--platform-config', 'Inject platform config only')
+  .option('--config', 'Inject agents + skills + platform config (default bundle)')
   .option('--tools', 'Inject tools only (testing + metrics + workflows)')
   .option('--processes', 'Inject processes only')
   .option('--context', 'Inject context-manager tool')
   .option('--all', 'Inject everything (default)')
   .action(async (path, options) => {
     const targetPath = path || '.';
-    options.all = options.all || (!options.config && !options.tools && !options.processes);
+    const hasSpecific = options.agents || options.skills || options.platformConfig || options.config || options.tools || options.processes || options.context;
+    options.all = options.all || !hasSpecific;
     await runInject(targetPath, options);
   });
 

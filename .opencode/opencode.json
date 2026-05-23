@@ -7,72 +7,48 @@
   },
   "agent": {
     "orchestrator": {
-      "description": "Primary orchestrator. Routes tasks to secondary agents based on keyword matching. Handles general tasks directly.",
+      "description": "Primary orchestrator. Routes tasks to secondary agents based on keyword matching.",
       "mode": "primary"
     },
     "database-specialist": {
-      "description": "TRIGGER KEYWORDS: database, SQL, query, schema, migration, ORM, PostgreSQL, MongoDB, data-model. MUST be used for any database-related task. Senior database engineer.",
+      "description": "TRIGGER KEYWORDS: database, SQL, query, schema, migration, ORM, PostgreSQL, MongoDB, data-model.",
       "mode": "subagent",
-      "permission": {
-        "edit": "allow",
-        "bash": "allow"
-      }
+      "permission": { "edit": "allow", "bash": "allow" }
     },
     "test-engineer": {
-      "description": "TRIGGER KEYWORDS: test, coverage, spec, pytest, jest, unittest, TDD, BDD, test-suite. MUST be used for testing tasks. Test engineer specializing in automated testing.",
+      "description": "TRIGGER KEYWORDS: test, coverage, spec, pytest, jest, unittest, TDD, BDD, test-suite.",
       "mode": "subagent",
-      "permission": {
-        "edit": "allow",
-        "bash": "allow"
-      }
+      "permission": { "edit": "allow", "bash": "allow" }
     },
     "doc-agent": {
-      "description": "TRIGGER KEYWORDS: document, readme, docs, API-doc, changelog, migration-guide, comment. MUST be used for documentation tasks. Technical writer for developer documentation.",
+      "description": "TRIGGER KEYWORDS: document, readme, docs, API-doc, changelog, migration-guide, comment.",
       "mode": "subagent",
-      "permission": {
-        "edit": "allow",
-        "bash": "deny"
-      }
+      "permission": { "edit": "allow", "bash": "deny" }
     },
     "security-reviewer": {
-      "description": "TRIGGER KEYWORDS: security, vulnerability, auth, CVE, OWASP, threat-model, audit, penetration. MUST be used for security reviews. Security engineer (read-only).",
+      "description": "TRIGGER KEYWORDS: security, vulnerability, auth, CVE, OWASP, threat-model, audit, penetration.",
       "mode": "subagent",
-      "permission": {
-        "edit": "deny",
-        "bash": "deny"
-      }
+      "permission": { "edit": "deny", "bash": "deny" }
     },
     "perf-engineer": {
-      "description": "TRIGGER KEYWORDS: performance, optimize, bottleneck, profile, caching, lazy-load, memory, latency. MUST be used for performance optimization. Performance engineer.",
+      "description": "TRIGGER KEYWORDS: performance, optimize, bottleneck, profile, caching, lazy-load, memory, latency.",
       "mode": "subagent",
-      "permission": {
-        "edit": "allow",
-        "bash": "allow"
-      }
+      "permission": { "edit": "allow", "bash": "allow" }
     },
     "devops-agent": {
-      "description": "TRIGGER KEYWORDS: deploy, CI/CD, pipeline, docker, kubernetes, release, infra, terraform, helm. MUST be used for DevOps and infrastructure tasks. DevOps engineer.",
+      "description": "TRIGGER KEYWORDS: deploy, CI/CD, pipeline, docker, kubernetes, release, infra, terraform, helm.",
       "mode": "subagent",
-      "permission": {
-        "edit": "allow",
-        "bash": "allow"
-      }
+      "permission": { "edit": "allow", "bash": "allow" }
     },
     "code-reviewer": {
-      "description": "TRIGGER KEYWORDS: review, PR, code-quality, lint, style, refactor, standards, best-practices. MUST be used for code review (read-only). Senior code reviewer.",
+      "description": "TRIGGER KEYWORDS: review, PR, code-quality, lint, style, refactor, standards, best-practices.",
       "mode": "subagent",
-      "permission": {
-        "edit": "deny",
-        "bash": "deny"
-      }
+      "permission": { "edit": "deny", "bash": "deny" }
     },
     "ui-specialist": {
-      "description": "TRIGGER KEYWORDS: UI, UX, component, layout, responsive, styling, accessibility, design-system, theme. MUST be used for UI/UX tasks. Frontend designer/developer.",
+      "description": "TRIGGER KEYWORDS: UI, UX, component, layout, responsive, styling, accessibility, design-system, theme.",
       "mode": "subagent",
-      "permission": {
-        "edit": "allow",
-        "bash": "allow"
-      }
+      "permission": { "edit": "allow", "bash": "allow" }
     }
   }
 }

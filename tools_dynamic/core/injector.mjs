@@ -38,6 +38,7 @@ export class Injector {
     if (activePlatforms.includes('antigravity')) aiFacingFilesList.push('GEMINI.md');
     if (activePlatforms.includes('vscode')) aiFacingFilesList.push('.github/copilot-instructions.md');
     if (activePlatforms.includes('claude')) aiFacingFilesList.push('CLAUDE.md');
+    if (activePlatforms.includes('vanilla')) aiFacingFilesList.push('.agents');
 
     const title = activePlatforms.includes('antigravity')
       ? `# Antigravity & Multi-Platform Project Rules — ${projectName}`
@@ -184,22 +185,22 @@ The primary agent uses the project default model. Secondary agents may use speci
   plan(scanResults, targetPath, components, options = {}) {
     const plan = { directories: [], create: [], modify: [] };
 
-    const includeConfig = components.includes('config');
+    const includeAgents = components.includes('agents') || components.includes('config');
+    const includeSkills = components.includes('skills') || components.includes('config');
+    const includePlatformConfig = components.includes('platformConfig') || components.includes('config');
     const includeProcesses = components.includes('processes');
     const includeTesting = components.includes('testing');
     const includeMetrics = components.includes('metrics');
     const includeWorkflows = components.includes('workflows');
     const includeContext = components.includes('context');
 
-    if (includeConfig) {
-      const agDir = join('config', 'agents-skills');
-      const platformsForConfig = scanResults.length > 0 ? scanResults : [];
+    const agDir = join('config', 'agents-skills');
+    const platformsForConfig = scanResults.length > 0 ? scanResults : [];
 
+    if (includeAgents) {
       for (const platform of platformsForConfig) {
         const variables = this.resolveVariablesFromScan([platform], targetPath);
-        const pName = platform.platform;
-        const isAntigravity = pName === 'antigravity';
-        const platformConfigDir = join('config', pName);
+        const isAntigravity = platform.platform === 'antigravity';
 
         const agFiles = this.listTemplates(join(agDir, 'agents'));
         for (const file of agFiles) {
@@ -211,6 +212,13 @@ The primary agent uses the project default model. Secondary agents may use speci
           plan.directories.push(`${variables.agentsDir}/`);
           plan.create.push({ path: targetFile, content: substituted });
         }
+      }
+    }
+
+    if (includeSkills) {
+      for (const platform of platformsForConfig) {
+        const variables = this.resolveVariablesFromScan([platform], targetPath);
+        const isAntigravity = platform.platform === 'antigravity';
 
         const skillFiles = this.listTemplatesNested(join(agDir, 'skills'));
         for (const file of skillFiles) {
@@ -226,6 +234,15 @@ The primary agent uses the project default model. Secondary agents may use speci
             : `${variables.skillsDir}/${file.subdir}/`);
           plan.create.push({ path: targetFile, content: substituted });
         }
+      }
+    }
+
+    if (includePlatformConfig) {
+      for (const platform of platformsForConfig) {
+        const variables = this.resolveVariablesFromScan([platform], targetPath);
+        const pName = platform.platform;
+        const isAntigravity = pName === 'antigravity';
+        const platformConfigDir = join('config', pName);
 
         if (pName === 'opencode') {
           const configJson = this.loadTemplate(join(platformConfigDir, 'opencode.json'));
@@ -262,7 +279,19 @@ The primary agent uses the project default model. Secondary agents may use speci
 
       if (platformsForConfig.length > 0) {
         const globalVars = this.resolveVariablesFromScan(platformsForConfig, targetPath);
-        const activePlatforms = platformsForConfig.map(p => p.platform);
+        let activePlatforms = platformsForConfig.map(p => p.platform);
+        const existingPlatformDirs = {
+          opencode: join(targetPath, '.opencode'),
+          vanilla: join(targetPath, '.agents'),
+          vscode: join(targetPath, '.github', 'copilot-instructions.md'),
+          claude: join(targetPath, 'CLAUDE.md'),
+          antigravity: join(targetPath, 'antigravity.yaml'),
+        };
+        for (const [plat, dirPath] of Object.entries(existingPlatformDirs)) {
+          if (existsSync(dirPath) && !activePlatforms.includes(plat)) {
+            activePlatforms.push(plat);
+          }
+        }
         const combinedContent = this.generateCombinedAgentsMd(globalVars.projectName, activePlatforms);
         const agentsMdTarget = 'AGENTS.md';
         if (existsSync(join(targetPath, agentsMdTarget))) {

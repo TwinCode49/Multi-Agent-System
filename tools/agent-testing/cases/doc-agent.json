@@ -1,15 +1,27 @@
 {
-  "agent": "doc-agent",
-  "type": "secondary",
-  "checks": {
-    "frontmatter": {
-      "description": "starts with TRIGGER KEYWORDS:",
-      "mode": "subagent",
-      "permission": { "edit": "allow", "bash": "deny" }
-    },
-    "keywords": ["document", "readme", "docs", "API-doc", "changelog", "migration-guide", "JSDoc"],
-    "sections": ["Core Responsibilities", "Behavior Rules", "Response Format", "Constraints", "Handoff Protocol"],
-    "contains": ["README", "CHANGELOG", "ADR", "Mermaid", "OpenAPI", "Keep a Changelog"],
-    "readOnly": false
-  }
+  "name": "doc-agent",
+  "keywords": [
+    "document",
+    "readme",
+    "docs",
+    "api-doc",
+    "changelog"
+  ],
+  "expectedKeywords": 10,
+  "sectionsRequired": [
+    "Core Responsibilities",
+    "Behavior Rules",
+    "Response Format",
+    "Constraints",
+    "Handoff Protocol"
+  ],
+  "modeExpected": "subagent",
+  "permissionsExpected": {
+    "edit": "allow",
+    "bash": "allow"
+  },
+  "hasHandoffExpected": true,
+  "skills": [
+    "documentation"
+  ]
 }

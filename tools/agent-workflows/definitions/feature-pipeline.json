@@ -1,49 +1,69 @@
 {
   "name": "feature-pipeline",
-  "version": "2.0",
-  "description": "Implement a full feature across all layers: schema → API → UI → tests → docs (with optional orchestrator synthesis)",
-  "trigger_keywords": ["new feature", "full implementation", "end-to-end feature"],
-  "synthesizer": {
-    "agent": "orchestrator",
-    "enabled": false,
-    "prompt": "Synthesize the test results and documentation into a feature completion report. Verify test coverage meets requirements. Flag any gaps between implementation and documentation.",
-    "input_from": ["test_code", "docs"]
-  },
+  "version": "1.0",
+  "description": "Implement a feature: build → test → document",
+  "trigger_keywords": [
+    "feature",
+    "implement",
+    "new functionality"
+  ],
   "steps": [
     {
-      "id": "schema",
+      "id": "database-specialist_build",
       "agent": "database-specialist",
-      "prompt": "Design the database schema and migration for the new feature. Output migration SQL and entity definitions.",
-      "output_key": "schema",
+      "skill": "database",
+      "prompt": "Implement the feature. Output code and changes.",
+      "output_key": "database-specialist_build",
       "depends_on": []
     },
     {
-      "id": "api_code",
-      "agent": "database-specialist",
-      "prompt": "Using the schema designed in the previous step, implement the API endpoints (controller, service, repository layers) with validation.",
-      "output_key": "api_code",
-      "depends_on": ["schema"]
-    },
-    {
-      "id": "ui_code",
-      "agent": "ui-specialist",
-      "prompt": "Build the UI components for the new feature. Cover all states: loading, empty, error, success.",
-      "output_key": "ui_code",
-      "depends_on": ["api_code"]
-    },
-    {
-      "id": "test_code",
+      "id": "test-engineer_test",
       "agent": "test-engineer",
-      "prompt": "Write unit and integration tests for the backend API and frontend components created in previous steps.",
-      "output_key": "test_code",
-      "depends_on": ["api_code", "ui_code"]
+      "skill": "testing",
+      "prompt": "Write tests for the implementation created in the previous step.",
+      "output_key": "test-engineer_test",
+      "depends_on": [
+        "database-specialist_build"
+      ]
     },
     {
-      "id": "docs",
+      "id": "doc-agent_docs",
       "agent": "doc-agent",
-      "prompt": "Document the new feature: update API docs, add changelog entry, write migration guide if needed.",
-      "output_key": "docs",
-      "depends_on": ["api_code", "ui_code"]
+      "skill": "documentation",
+      "prompt": "Document the new feature: update API docs, add changelog entry.",
+      "output_key": "doc-agent_docs",
+      "depends_on": [
+        "database-specialist_build"
+      ]
     }
-  ]
+  ],
+  "format": "executor-json",
+  "platform": "opencode",
+  "agent_skills": {
+    "code-reviewer": [],
+    "database-specialist": [
+      "database"
+    ],
+    "devops-agent": [
+      "containerization"
+    ],
+    "doc-agent": [
+      "documentation"
+    ],
+    "orchestrator": [],
+    "perf-engineer": [
+      "backend",
+      "database"
+    ],
+    "security-reviewer": [
+      "backend",
+      "containerization"
+    ],
+    "test-engineer": [
+      "testing"
+    ],
+    "ui-specialist": [
+      "frontend"
+    ]
+  }
 }

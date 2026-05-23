@@ -1,7 +1,7 @@
 import { join, basename, dirname } from 'path';
 import { readdirSync, existsSync, statSync } from 'fs';
 import { PlatformScanner } from '../core/types.mjs';
-import { Parser, scanDotAgent, buildCrossIndex } from '../core/parser.mjs';
+import { Parser, scanDotAgent, buildCrossIndex, resolveSkillRefs } from '../core/parser.mjs';
 
 export function parseSimpleYaml(content) {
   const result = {};
@@ -158,6 +158,7 @@ export class AntigravityScanner extends PlatformScanner {
 
       if (config.agents) {
         for (const [name, def] of Object.entries(config.agents)) {
+          const rawRefs = Array.isArray(def.paths) ? def.paths : [];
           result.agents.push({
             name,
             role: def.role || '',
@@ -167,6 +168,8 @@ export class AntigravityScanner extends PlatformScanner {
             permissions: { edit: 'allow', bash: 'allow' },
             sections: [],
             hasHandoff: false,
+            skills: [],
+            _skillRefs: rawRefs,
           });
         }
       }
@@ -179,6 +182,7 @@ export class AntigravityScanner extends PlatformScanner {
             filePath: '',
             references: [],
             crossPlatformSynced: false,
+            role: undefined,
           });
         }
       }
@@ -207,6 +211,7 @@ export class AntigravityScanner extends PlatformScanner {
       result.platformMeta.agentDiscovery = config ? 'yaml+rules' : 'rules';
     }
 
+    resolveSkillRefs(result.agents, result.skills);
     buildCrossIndex(result.agents, result.skills);
     return result;
   }

@@ -1,15 +1,28 @@
 {
-  "agent": "perf-engineer",
-  "type": "secondary",
-  "checks": {
-    "frontmatter": {
-      "description": "starts with TRIGGER KEYWORDS:",
-      "mode": "subagent",
-      "permission": { "edit": "allow", "bash": "allow" }
-    },
-    "keywords": ["performance", "optimize", "bottleneck", "profile", "caching", "memory", "N+1"],
-    "sections": ["Core Responsibilities", "Behavior Rules", "Response Format", "Constraints", "Handoff Protocol"],
-    "contains": ["profile first", "baseline", "p99", "trade-off", "load test"],
-    "readOnly": false
-  }
+  "name": "perf-engineer",
+  "keywords": [
+    "performance",
+    "optimize",
+    "bottleneck",
+    "profile",
+    "caching"
+  ],
+  "expectedKeywords": 10,
+  "sectionsRequired": [
+    "Core Responsibilities",
+    "Behavior Rules",
+    "Response Format",
+    "Constraints",
+    "Handoff Protocol"
+  ],
+  "modeExpected": "subagent",
+  "permissionsExpected": {
+    "edit": "allow",
+    "bash": "allow"
+  },
+  "hasHandoffExpected": true,
+  "skills": [
+    "backend",
+    "database"
+  ]
 }

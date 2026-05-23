@@ -1,12 +1,12 @@
 {
-  "name": "devops-agent",
+  "name": "context-steward",
   "keywords": [
-    "deploy",
-    "ci/cd",
-    "pipeline",
-    "docker",
-    "kubernetes",
-    "release"
+    "context",
+    "token",
+    "compact",
+    "summarize",
+    "truncate",
+    "window"
   ],
   "expectedKeywords": 10,
   "sectionsRequired": [
@@ -23,6 +23,6 @@
   },
   "hasHandoffExpected": true,
   "skills": [
-    "containerization"
+    "context-management"
   ]
 }

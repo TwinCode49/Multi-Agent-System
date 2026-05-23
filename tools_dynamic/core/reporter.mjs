@@ -291,6 +291,7 @@ export class Reporter {
           console.log(`  ${CYAN}Detected project type: ${vanilla.language}${RESET}`);
           if (vanilla.framework) console.log(`  ${CYAN}Framework: ${vanilla.framework}${RESET}`);
           console.log(`  ℹ️  ${CYAN}Recommended platform: ${vanilla.recommendedPlatform}${RESET}`);
+          console.log(`  ${CYAN}   Or use --platform vanilla for the generic .agents/ convention${RESET}`);
           console.log(`  💡 Run ${CYAN}tools-dynamic init${RESET} to bootstrap agent configuration.\n`);
         } else {
           console.log(`  💡 Run ${CYAN}tools-dynamic list-platforms${RESET} to see detectable platforms.\n`);
@@ -580,6 +581,7 @@ export class Reporter {
       { name: 'VS Code / Copilot', indicators: '.github/copilot-instructions.md', agents: '.github/agents/*.md', skills: '.github/skills/*/SKILL.md' },
       { name: 'Claude Code', indicators: 'CLAUDE.md, .claude/', agents: '.claude/agents/*.md', skills: '.claude/skills/*/SKILL.md', extra: '.claude/settings.json, rules/, mcp.json' },
       { name: 'Antigravity', indicators: 'antigravity.yaml, antigravity.json', agents: 'defined in config', skills: 'defined in config' },
+      { name: 'Generic (Vanilla)', indicators: '.agents/, AGENTS.md', agents: '.agents/agents/*.md', skills: '.agents/skills/*/SKILL.md', extra: 'init --platform vanilla' },
     ];
 
     console.log(`\n  ${BOLD}Detectable Platforms${RESET}\n`);
