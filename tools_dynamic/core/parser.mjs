@@ -22,6 +22,7 @@ function parseAgentFromMd(filePath, content) {
     hasHandoff: body.includes('Handoff Protocol'),
     skills: [],
     _skillRefs: rawSkills,
+    model: frontmatter.model === 'auto' ? undefined : (frontmatter.model || undefined),
   };
 }
 

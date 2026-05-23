@@ -163,9 +163,18 @@ a:
 '--platform <name>', 'Target platform for --yes mode (opencode, vscode, claude, antigravity, vanilla)'
 ```
 
-#### 2.4 — `injector.plan()` con vanilla
+#### 2.4 — `resolveVariablesFromScan()` con vanilla
 
-`injector.plan()` ya itera `scanResults` y usa `platform.platform` para determinar rutas. Con `makeSyntheticResult('vanilla', ...)`, el `plan()` usará `.agents/agents` y `.agents/skills` correctamente.
+`injector.plan()` usa `resolveVariablesFromScan()` para determinar las rutas de directorios de cada plataforma. Originalmente no tenía un caso para `vanilla`, por lo que todo caía al default `.opencode/`. Se agregó el case:
+
+```js
+} else if (pName === 'vanilla') {
+  agentsDir = '.agents/agents';
+  skillsDir = '.agents/skills';
+  githubSkillsDir = '.github/skills';
+  platformDir = '.agents';
+}
+```
 
 > **Nota**: Vanilla no tiene detector. Solo existe como plataforma sintética para `makeSyntheticResult()`. El scanner NUNCA detecta `vanilla` automáticamente — solo aparece cuando el usuario la selecciona explícitamente.
 
@@ -382,11 +391,24 @@ Target platform for --yes mode (opencode, vscode, claude, antigravity)
 ## Archivos a Modificar
 
 | Archivo | Fixes | Tipo de cambio |
-|---|---|---|
-| `tools_dynamic/index.mjs` | 1, 2, 3, 5, D | Estructural: prompts (list), flags, makeSyntheticResult, vanilla, exit |
+|---|---|---|---|
+| `tools_dynamic/index.mjs` | 1, 2, 3, 5, D, 6, C | Estructural: prompts (select), flags, makeSyntheticResult, vanilla, exit, UX init |
 | `tools_dynamic/commands/inject.mjs` | 3 | Aditivo: nuevos flags |
-| `tools_dynamic/core/injector.mjs` | 3, M | Estructural: plan() con componentes separados + multi-platform merge AGENTS.md |
-| `tools_dynamic/core/reporter.mjs` | 4, D | Aditivo: mención vanilla + vanilla en printPlatforms |
+| `tools_dynamic/core/injector.mjs` | 3, M, 2b | Estructural: plan() con componentes separados + multi-platform merge AGENTS.md + vanilla paths en resolveVariablesFromScan + defaultModel |
+| `tools_dynamic/core/reporter.mjs` | 4, D, A, B, Md | Aditivo: mención vanilla, UX doctor, UX analyze, UX empty dir, modelo en analyze/doctor/diagnose |
+| `tools_dynamic/core/types.mjs` | Md | Aditivo: `model` opcional en AgentDef |
+| `tools_dynamic/core/parser.mjs` | Md | Aditivo: extraer `model` del frontmatter, `auto` → undefined |
+| `tools_dynamic/scanners/opencode-scanner.mjs` | Md | Aditivo: extraer `model` del frontmatter |
+| `tools_dynamic/scanners/vscode-scanner.mjs` | Md | Aditivo: extraer `model` del frontmatter |
+| `tools_dynamic/scanners/claude-scanner.mjs` | Md | Aditivo: extraer `model` del frontmatter |
+| `tools_dynamic/scanners/antigravity-scanner.mjs` | Ag | Estructural: endurecer `detect()` — eliminar condiciones compartidas con vanilla |
+| `tools_dynamic/scanners/vanilla-scanner.mjs` | Vs | **Nuevo**: scanner para plataforma vanilla (`.agents/`) |
+| `tools_dynamic/scanners/scanner.mjs` | Vs | Aditivo: registrar VanillaScanner + prioridad vanilla |
+| `tools_dynamic/templates/config/agents-skills/agents/code-reviewer.md` | Md | Aditivo: `model: auto` en vez de modelo hardcodeado |
+| `tools_dynamic/templates/config/agents-skills/agents/security-reviewer.md` | Md | Aditivo: `model: auto` |
+| `tools_dynamic/templates/config/opencode/opencode.json` | Md | Aditivo: `defaultModel` |
+| `tools_dynamic/tests/vanilla-scanner.test.mjs` | Vs | **Nuevo**: 10 tests para VanillaScanner |
+| `tools_dynamic/tests/scanner.test.mjs` | Vs | Actualizado: vanilla detectado, no vacío |
 | `tools_dynamic/tests/injector.test.mjs` | 3 | Aditivo: 3 nuevos tests |
 
 ---
@@ -398,7 +420,179 @@ Target platform for --yes mode (opencode, vscode, claude, antigravity)
 3. **Fix 1** (index.mjs) — Independiente, solo toca prompts
 4. **Fix 4** (reporter.mjs) — Depende de Fix 2 (menciona --platform vanilla)
 5. **Fix 5** (index.mjs) — Cosmético, al final
-6. **Tests** — Validar todo junto
+6. **Fix 6** (index.mjs) — Inquirer v13: `list` → `select`
+7. **Fix A/B/C** (reporter.mjs, index.mjs) — UX en carpeta vacía
+8. **Tests** — Validar todo junto
+
+---
+
+## Mejora Post-Fix — VanillaScanner (detección automática de `.agents/`)
+
+### Problema
+
+La plataforma vanilla solo existía como `makeSyntheticResult()` (sintética). No tenía scanner propio, por lo que nunca se mostraba como `✅` detectada en el menú interactivo. Antes de endurecer AntigravityScanner, antigravity detectaba falsamente `.agents/agents/` y `.agents/skills/` como propios.
+
+### Solución
+
+#### VanillaScanner (nuevo)
+
+**Archivo:** `tools_dynamic/scanners/vanilla-scanner.mjs`
+
+Scanner que detecta `.agents/` y escanea agentes/skills desde `.agents/agents/` y `.agents/skills/`:
+
+```js
+export class VanillaScanner extends PlatformScanner {
+  static platformName = 'vanilla';
+
+  detect(basePath) {
+    return existsSync(join(basePath, '.agents'));
+  }
+
+  scan(basePath) {
+    // platform: 'vanilla'
+    // nativeCapabilities: customTools: true
+    // Agentes: .agents/agents/*.md + scanDotAgent()
+    // Skills: .agents/skills/*/SKILL.md + scanDotAgent()
+    // Tools: tools/agent-testing, tools/agent-metrics, tools/agent-workflows
+    // Workflows: tools/agent-workflows/definitions/*.json
+  }
+}
+```
+
+#### AntigravityScanner — detect() endurecido
+
+**Archivo:** `tools_dynamic/scanners/antigravity-scanner.mjs`
+
+Se eliminaron 4 condiciones del `detect()` que compartían directorios con vanilla:
+
+| Condición eliminada | Motivo |
+|---|---|
+| ~~`.agents/agents`~~ | Compartido con vanilla |
+| ~~`.agents/skills`~~ | Compartido con vanilla |
+| ~~`.agent/agents`~~ | Compartido con `.agent/` genérico |
+| ~~`.agent/skills`~~ | Compartido con `.agent/` genérico |
+
+Se mantienen las condiciones exclusivas de antigravity:
+- `antigravity.yaml` / `antigravity.json` — archivos de configuración propios
+- `.agents/rules` — subcarpeta específica de antigravity (vanilla usa `agents/` no `rules/`)
+- `.agent/rules` — mismo criterio
+
+#### scanner.mjs — Registro
+
+**Archivo:** `tools_dynamic/scanners/scanner.mjs`
+
+```js
+import { VanillaScanner } from './vanilla-scanner.mjs';
+
+this.scanners = [
+  new OpenCodeScanner(),
+  new VSCodeScanner(),
+  new ClaudeScanner(),
+  new AntigravityScanner(),
+  new VanillaScanner(),  // <-- nuevo
+];
+
+// scanPrimary priority:
+const priority = ['opencode', 'vscode', 'claude', 'antigravity', 'vanilla'];
+```
+
+### Tests
+
+**Archivo nuevo:** `tools_dynamic/tests/vanilla-scanner.test.mjs` (10 tests)
+
+**Archivo modificado:** `tools_dynamic/tests/scanner.test.mjs` — actualizadas expectativas para vanilla detectado
+
+### Comportamiento
+
+| Escenario | Antes | Después |
+|---|---|---|
+| Proyecto con `.agents/` solo | Antigravity lo detectaba falsamente ✅ | Vanilla lo detecta ✅, Antigravity no ❌ |
+| Proyecto con `antigravity.yaml` + `.agents/` | Solo antigravity ✅ | Ambos ✅ |
+| Proyecto sin nada | Ninguno ❌ | Ninguno ❌ |
+| `init` en proyecto vanilla | Mostraba "0 platforms" sin ✅ | Muestra "1 platform — vanilla ✅" |
+
+---
+
+## Mejora Post-Fix — Model handling (`model: auto`)
+
+### Problema
+
+Las templates de agentes read-only (`code-reviewer.md`, `security-reviewer.md`) tenían `model: claude-sonnet-4-20250514` hardcodeado. Si ese modelo no estaba disponible en runtime, no había fallback. Además, el scanner no extraía `model` del frontmatter, por lo que ninguna herramienta podía leer ni validar el modelo de un agente.
+
+### Solución
+
+#### 1. `model: auto` en templates
+
+**Archivos:** `tools_dynamic/templates/config/agents-skills/agents/code-reviewer.md`, `security-reviewer.md`
+
+```yaml
+model: auto  # "usar el modelo por defecto del proyecto"
+```
+
+`auto` significa: "este agente no requiere modelo especializado, usa el default". Si el usuario quiere especializar, cambia `auto` por un nombre de modelo concreto.
+
+#### 2. Scanner extrae `model`, normaliza `auto` → `undefined`
+
+**Archivos:** `opencode-scanner.mjs`, `vscode-scanner.mjs`, `claude-scanner.mjs`, `parser.mjs`
+
+```js
+model: frontmatter.model === 'auto' ? undefined : (frontmatter.model || undefined),
+```
+
+#### 3. `AgentDef` incluye `model`
+
+**Archivo:** `core/types.mjs`
+
+```js
+/**
+ * @typedef {Object} AgentDef
+ * ...
+ * @property {string} [model]  // Modelo especializado (opcional)
+ */
+```
+
+#### 4. `defaultModel` en `opencode.json`
+
+**Archivo:** `tools_dynamic/templates/config/opencode/opencode.json`
+
+```json
+{
+  "defaultModel": "claude-sonnet-4-20250514",
+  ...
+}
+```
+
+#### 5. `resolveVariablesFromScan()` lee `defaultModel`
+
+**Archivo:** `core/injector.mjs`
+
+```js
+let defaultModel = 'gpt-4o';  // fallback global
+try {
+  const cfgPath = join(targetPath, platformDir, 'opencode.json');
+  if (existsSync(cfgPath)) {
+    const cfg = JSON.parse(readFileSync(cfgPath, 'utf-8'));
+    if (cfg.defaultModel) defaultModel = cfg.defaultModel;
+  }
+} catch {}
+```
+
+#### 6. Reporter muestra modelo + alerta
+
+**Archivo:** `core/reporter.mjs`
+
+- `printAnalysis()`: muestra `[model: claude-sonnet-4-20250514]` o `[model: default]` por agente
+- `diagnose()`: warning si agente read-only (`edit: deny`) no tiene modelo asignado
+- `_platformToJSON()`: incluye `model` en JSON de salida
+
+### Comportamiento
+
+| Escenario | Scanner | analyze | doctor |
+|---|---|---|---|
+| `model: auto` en .md | `model: undefined` | `[model: default]` | Sin warning (intencional) |
+| `model: claude-...` en .md | `model: 'claude-...'` | Muestra el modelo | Sin warning |
+| Sin `model:` en .md (read-only) | `model: undefined` | `[model: default]` | ⚠️ Warning: agregar modelo |
+| Sin `model:` en .md (no read-only) | `model: undefined` | `[model: default]` | Sin warning |
 
 ---
 
@@ -406,19 +600,22 @@ Target platform for --yes mode (opencode, vscode, claude, antigravity)
 
 | Escenario | Comportamiento esperado | Estado |
 |---|---|---|
-| `node tools_dynamic/index.mjs init .` | Sigue igual, pero con opciones separadas + exit | ✅ |
+| `node tools_dynamic/index.mjs init .` | Prompt `select` con menú navegable + exit | ✅ |
 | `node tools_dynamic/index.mjs init . --yes` | Sin cambios | ✅ |
+| `node tools_dynamic/index.mjs init <empty>` | Menu de plataformas visible + selección | ✅ |
+| `node tools_dynamic/index.mjs doctor <empty>` | "⚠️ No configuration detected. Run init" | ✅ |
+| `node tools_dynamic/index.mjs analyze <empty>` | "Run init" (no "list-platforms") | ✅ |
 | `node tools_dynamic/index.mjs inject . --config` | Sigue igual (bundle) | ✅ |
 | `node tools_dynamic/index.mjs inject . --agents` | Nuevo: solo agentes | ✅ |
 | `node tools_dynamic/index.mjs inject . --skills` | Nuevo: solo skills | ✅ |
 | `node tools_dynamic/index.mjs inject . --platform-config` | Nuevo: solo platform config | ✅ |
 | `node tools_dynamic/index.mjs validate .` | Sin cambios | ✅ |
 | `node tools_dynamic/index.mjs update .` | Sin cambios | ✅ |
-| `node --test tools_dynamic/tests/*.test.mjs` | 181 tests, todos pasan | ✅ |
+| `node --test tools_dynamic/tests/*.test.mjs` | 190 tests, todos pasan | ✅ |
 
 ---
 
-## Mejora Post-Fix — Option D: List para plataformas
+## Mejora Post-Fix — Option D: Select para plataformas
 
 ### Problema
 
@@ -426,11 +623,11 @@ El checkbox de plataformas permitía seleccionar múltiples plataformas a la vez
 
 ### Solución
 
-Cambiar el prompt de plataformas a `type: 'list'` para selección única + Enter directo:
+Cambiar el prompt de plataformas a `type: 'select'` para selección única + Enter directo:
 
 ```js
 const { platform } = await inquirer.prompt([{
-  type: 'list',
+  type: 'select',
   name: 'platform',
   message: 'Select target platform to configure:',
   choices: [
@@ -455,6 +652,38 @@ El prompt de componentes se mantiene como `checkbox` con opción `__exit__`.
 ### Cambio clave
 
 El `Separator` debe colocarse DIRECTO en el array (no como `{name: new inquirer.Separator()}`) porque `@inquirer/prompts` v4+ reconoce `{type: 'separator'}` solo cuando el choice es una instancia directa de `Separator`, no cuando está envuelta en un objeto.
+
+---
+
+## Fix 6 — Inquirer v13: `type: 'list'` no existe, usar `type: 'select'`
+
+### Problema
+
+`inquirer` v13 migró internamente a `@inquirer/prompts`. El mapeo de tipos (`inquirer/dist/index.js`):
+
+```js
+const builtInPrompts = { input, select, number, confirm, rawlist, expand, checkbox, password, editor, search };
+```
+
+No existe la clave `'list'`. Cuando `PromptsRunner.prepareQuestion()` encuentra un `type` que no está en `builtInPrompts`, falla silenciosamente a `'input'`:
+
+```js
+type: question.type in this.prompts ? question.type : 'input',
+```
+
+Esto convertía el menú navegable de plataformas en un campo de texto vacío. El usuario veía "Select a platform below to bootstrap." seguido de un `@inquirer/input` sin opciones, donde Enter enviaba string vacío.
+
+### Solución
+
+Cambiar `type: 'list'` a `type: 'select'` en el prompt de plataformas. `'select'` existe en el mapeo y apunta directamente a `@inquirer/select`.
+
+### Cambio clave
+
+Sensible a versiones de `inquirer`: `type: 'list'` funciona en inquirer v8-v9 pero NO en v13+.
+
+### Archivos modificados
+
+- `tools_dynamic/index.mjs` — Fix 6: `list` → `select`
 
 ---
 
@@ -499,6 +728,61 @@ if (activePlatforms.includes('vanilla')) aiFacingFilesList.push('.agents');
 
 1. Primer run: `init` para `opencode` → crea `.opencode/` + AGENTS.md mencionando opencode
 2. Segundo run: `init` para `vanilla` → detecta `.opencode/` existente → AGENTS.md menciona **ambas** plataformas
+
+---
+
+## Fix 7 — Prompt de plataformas siempre visible en `init`
+
+### Problema
+
+El prompt de selección de plataformas solo se mostraba cuando `results.length === 0`. Después del primer `init` exitoso, el scanner detectaba la plataforma instalada y el prompt desaparecía, impidiendo al usuario configurar plataformas adicionales en ejecuciones posteriores.
+
+### Solución
+
+Eliminar el condicional `if (results.length === 0)` alrededor del prompt. Ahora el menú se muestra **siempre**:
+
+```js
+const detectedNames = results.map(r => r.platform);
+const makeChoice = (name, value) => ({
+  name: name + (detectedNames.includes(value) ? ` ${GREEN}✅${RESET}` : ''),
+  value,
+});
+const { platform } = await inquirer.prompt([{
+  type: 'select',
+  name: 'platform',
+  message: 'Select target platform to configure:',
+  choices: [
+    makeChoice('OpenCode (.opencode/, AGENTS.md)', 'opencode'),
+    makeChoice('VS Code / Copilot (.github/copilot-instructions.md)', 'vscode'),
+    makeChoice('Claude Code (CLAUDE.md, .claude/)', 'claude'),
+    makeChoice('Antigravity (antigravity.yaml)', 'antigravity'),
+    makeChoice('Generic (.agents/ convention)', 'vanilla'),
+    new inquirer.Separator(),
+    { name: '🚪 Exit — show available commands', value: '__exit__' },
+  ],
+}]);
+if (platform === '__exit__') {
+  // muestra lista de comandos disponibles y termina
+  return;
+}
+if (!detectedNames.includes(platform)) {
+  results.push(makeSyntheticResult(platform, targetPath));
+}
+```
+
+### Cambios clave
+
+| Aspecto | Antes | Después |
+|---|---|---|
+| Condición | Solo si `results.length === 0` | Siempre |
+| Marcador | — | `✅` en plataformas ya detectadas |
+| Exit | "Exiting. No changes made." | Muestra comandos disponibles (`doctor`, `validate`, `report`, `inject`, `update`, `list-platforms`) |
+| Asignación | `results = [synthetic]` (reemplaza) | `results.push(synthetic)` si es nueva plataforma |
+| Plataforma ya detectada | No aplicaba | Usa datos reales del scanner |
+
+### Archivos modificados
+
+- `tools_dynamic/index.mjs` — Fix 7: prompt siempre visible
 
 ---
 

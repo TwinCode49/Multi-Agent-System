@@ -106,11 +106,7 @@ export class AntigravityScanner extends PlatformScanner {
     return Parser.exists(join(basePath, 'antigravity.yaml'))
       || Parser.exists(join(basePath, 'antigravity.json'))
       || Parser.exists(join(basePath, '.agents', 'rules'))
-      || Parser.exists(join(basePath, '.agents', 'agents'))
-      || Parser.exists(join(basePath, '.agents', 'skills'))
-      || Parser.exists(join(basePath, '.agent', 'rules'))
-      || Parser.exists(join(basePath, '.agent', 'agents'))
-      || Parser.exists(join(basePath, '.agent', 'skills'));
+      || Parser.exists(join(basePath, '.agent', 'rules'));
   }
 
   scan(basePath) {

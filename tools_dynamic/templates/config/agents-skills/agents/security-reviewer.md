@@ -10,6 +10,7 @@ mode: subagent
 permission:
   edit: deny
   bash: deny
+model: auto
 skills:
   paths: ["{{skillsDir}}/testing"]
 ---

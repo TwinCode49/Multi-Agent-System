@@ -19,6 +19,7 @@
  * @property {string[]} sections
  * @property {boolean} hasHandoff
  * @property {string[]} skills
+ * @property {string} [model]
  */
 
 /**

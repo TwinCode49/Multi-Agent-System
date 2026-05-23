@@ -11,7 +11,7 @@ mode: subagent
 permission:
   edit: deny
   bash: deny
-model: claude-sonnet-4-20250514
+model: auto
 skills:
   paths: ["{{skillsDir}}/testing", "{{skillsDir}}/documentation"]
 ---

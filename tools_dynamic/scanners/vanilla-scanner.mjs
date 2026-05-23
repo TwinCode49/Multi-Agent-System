@@ -3,24 +3,24 @@ import { existsSync } from 'fs';
 import { PlatformScanner } from '../core/types.mjs';
 import { Parser, scanDotAgent, buildCrossIndex, resolveSkillRefs } from '../core/parser.mjs';
 
-export class ClaudeScanner extends PlatformScanner {
-  static platformName = 'claude';
+export class VanillaScanner extends PlatformScanner {
+  static platformName = 'vanilla';
 
   detect(basePath) {
-    return existsSync(join(basePath, 'CLAUDE.md')) || existsSync(join(basePath, '.claude'));
+    return existsSync(join(basePath, '.agents'));
   }
 
   scan(basePath) {
     const result = {
-      platform: 'claude',
+      platform: 'vanilla',
       platformVersion: '1.0',
       detected: true,
       nativeCapabilities: {
-        subagents: true,
-        agentTeams: true,
-        parallelExecution: true,
-        hooks: true,
-        mcp: true,
+        subagents: false,
+        agentTeams: false,
+        parallelExecution: false,
+        hooks: false,
+        mcp: false,
         customTools: true,
       },
       agents: [],
@@ -31,29 +31,16 @@ export class ClaudeScanner extends PlatformScanner {
       platformMeta: {},
     };
 
-    const claudeMdPath = join(basePath, 'CLAUDE.md');
-    const claudeMdContent = Parser.readFileSafe(claudeMdPath);
-    if (claudeMdContent) {
-      result.configPaths.push(claudeMdPath);
-      const sections = claudeMdContent.split('\n').filter(l => l.startsWith('## ')).map(l => l.replace(/^##\s+/, '').trim());
-      result.platformMeta.claudeMdSections = sections;
+    const agentsDir = join(basePath, '.agents');
+    result.configPaths.push(agentsDir);
+
+    const agendsMdPath = join(basePath, 'AGENTS.md');
+    if (Parser.readFileSafe(agendsMdPath)) {
+      result.configPaths.push(agendsMdPath);
     }
 
-    const claudeDir = join(basePath, '.claude');
-    if (!existsSync(claudeDir)) return result;
-    result.configPaths.push(claudeDir);
-
-    const settingsPath = join(claudeDir, 'settings.json');
-    const settingsContent = Parser.readFileSafe(settingsPath);
-    if (settingsContent) {
-      result.configPaths.push(settingsPath);
-      try {
-        result.platformMeta.settings = JSON.parse(settingsContent);
-      } catch {}
-    }
-
-    const agentsDir = join(claudeDir, 'agents');
-    const agentFiles = Parser.findFiles(agentsDir, '.md');
+    const agentFilesDir = join(agentsDir, 'agents');
+    const agentFiles = Parser.findFiles(agentFilesDir, '.md');
     for (const filePath of agentFiles) {
       const content = Parser.readFileSafe(filePath);
       if (!content) continue;
@@ -64,9 +51,9 @@ export class ClaudeScanner extends PlatformScanner {
         name,
         role: frontmatter.description || frontmatter.role || '',
         keywords: [],
-        mode: 'subagent',
+        mode: frontmatter.mode === 'primary' ? 'primary' : 'subagent',
         filePath,
-        permissions: { edit: 'allow', bash: 'allow' },
+        permissions: { edit: frontmatter.edit || 'allow', bash: frontmatter.bash || 'allow' },
         sections: body.split('\n').filter(l => l.startsWith('## ')).map(l => l.replace(/^##\s+/, '').trim()),
         hasHandoff: body.includes('Handoff Protocol'),
         skills: [],
@@ -75,7 +62,7 @@ export class ClaudeScanner extends PlatformScanner {
       });
     }
 
-    const skillsDir = join(claudeDir, 'skills');
+    const skillsDir = join(agentsDir, 'skills');
     const skillDirs = Parser.findFiles(skillsDir, 'SKILL.md');
     for (const skillPath of skillDirs) {
       const content = Parser.readFileSafe(skillPath);
@@ -86,25 +73,31 @@ export class ClaudeScanner extends PlatformScanner {
         name: skillName,
         keywords: [],
         filePath: skillPath,
-        references: [],
+        references: Parser.findFiles(join(dirname(skillPath), 'references'), '.md'),
         crossPlatformSynced: false,
         role: frontmatter.role || undefined,
       });
     }
 
-    const rulesDir = join(claudeDir, 'rules');
-    const ruleFiles = Parser.findFiles(rulesDir, '.md');
-    result.platformMeta.rules = ruleFiles;
+    const toolsDir = join(basePath, 'tools');
+    if (existsSync(join(toolsDir, 'agent-testing'))) result.existingTools.push('testing');
+    if (existsSync(join(toolsDir, 'agent-metrics'))) result.existingTools.push('metrics');
+    if (existsSync(join(toolsDir, 'agent-workflows'))) result.existingTools.push('workflows');
 
-    const mcpPath = join(claudeDir, 'mcp.json');
-    if (Parser.exists(mcpPath)) {
-      result.configPaths.push(mcpPath);
-      const mcpContent = Parser.readFileSafe(mcpPath);
-      if (mcpContent) {
-        try {
-          result.platformMeta.mcpServers = Object.keys(JSON.parse(mcpContent).mcpServers || {});
-        } catch {}
-      }
+    const workflowsDefDir = join(basePath, 'tools', 'agent-workflows', 'definitions');
+    const workflowFiles = Parser.findFiles(workflowsDefDir, '.json');
+    for (const wfPath of workflowFiles) {
+      const content = Parser.readFileSafe(wfPath);
+      if (!content) continue;
+      try {
+        const wf = JSON.parse(content);
+        result.workflows.push({
+          name: wf.name || basename(wfPath, '.json'),
+          steps: (wf.steps || []).length,
+          agents: [...new Set((wf.steps || []).map(s => s.agent))],
+          filePath: wfPath,
+        });
+      } catch { }
     }
 
     const dotAgent = scanDotAgent(basePath);
@@ -113,10 +106,6 @@ export class ClaudeScanner extends PlatformScanner {
     }
     for (const skill of dotAgent.skills) {
       if (!result.skills.some(s => s.name === skill.name)) result.skills.push(skill);
-    }
-    if (dotAgent.agents.length > 0 || dotAgent.skills.length > 0) {
-      const dotAgentsDir = join(basePath, '.agents');
-      if (!result.configPaths.includes(dotAgentsDir)) result.configPaths.push(dotAgentsDir);
     }
 
     resolveSkillRefs(result.agents, result.skills);

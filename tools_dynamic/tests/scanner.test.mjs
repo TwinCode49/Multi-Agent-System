@@ -20,7 +20,8 @@ describe('Scanner orchestrator', () => {
   test('scanAll returns only detected platforms', () => {
     const scanner = new Scanner();
     const results = scanner.scanAll(join(fixturesDir, 'vanilla-project'));
-    assert.equal(results.length, 0);
+    assert.equal(results.length, 1);
+    assert.equal(results[0].platform, 'vanilla');
   });
 
   test('scanPrimary returns highest priority platform', () => {
@@ -37,10 +38,11 @@ describe('Scanner orchestrator', () => {
     assert.equal(result.platform, 'claude');
   });
 
-  test('scanPrimary returns null for unknown project', () => {
+  test('scanPrimary returns vanilla for vanilla project', () => {
     const scanner = new Scanner();
     const result = scanner.scanPrimary(join(fixturesDir, 'vanilla-project'));
-    assert.equal(result, null);
+    assert.ok(result);
+    assert.equal(result.platform, 'vanilla');
   });
 
   test('scan handles project with multiple platforms', () => {
@@ -51,10 +53,12 @@ describe('Scanner orchestrator', () => {
     assert.ok(results.some(r => r.platform === 'antigravity'));
   });
 
-  test('scan returns empty array for vanilla project', () => {
+  test('scan detects vanilla project', () => {
     const scanner = new Scanner();
     const results = scanner.scan(join(fixturesDir, 'vanilla-project'));
-    assert.equal(results.length, 0);
+    assert.equal(results.length, 1);
+    assert.equal(results[0].platform, 'vanilla');
+    assert.equal(results[0].detected, true);
   });
 
   test('buildCrossIndex creates bidirectional links', () => {

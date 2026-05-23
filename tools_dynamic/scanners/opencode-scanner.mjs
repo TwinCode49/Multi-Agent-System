@@ -73,6 +73,7 @@ export class OpenCodeScanner extends PlatformScanner {
         hasHandoff: body.includes('Handoff Protocol'),
         skills: [],
         _skillRefs: rawRefs,
+        model: frontmatter.model === 'auto' ? undefined : (frontmatter.model || undefined),
       });
     }
 

@@ -199,30 +199,40 @@ program
     console.log(`  Project: ${BOLD}${targetPath}${RESET}`);
     console.log(`  Platforms: ${summary.totalPlatforms} | Agents: ${summary.totalAgents} | Skills: ${summary.totalSkills} | Workflows: ${summary.totalWorkflows}\n`);
 
-    if (results.length === 0) {
-      await reporter.printAnalysis(results, targetPath);
-      console.log(`\n  ${YELLOW}No agent platforms detected.${RESET}`);
-      const { platform } = await inquirer.prompt([{
-        type: 'list',
-        name: 'platform',
-        message: 'Select target platform to configure:',
-        choices: [
-          { name: 'OpenCode (.opencode/, AGENTS.md)', value: 'opencode' },
-          { name: 'VS Code / Copilot (.github/copilot-instructions.md)', value: 'vscode' },
-          { name: 'Claude Code (CLAUDE.md, .claude/)', value: 'claude' },
-          { name: 'Antigravity (antigravity.yaml)', value: 'antigravity' },
-          { name: 'Generic (.agents/ convention)', value: 'vanilla' },
-          new inquirer.Separator(),
-          { name: '❌ Cancel / Exit', value: '__exit__' },
-        ],
-      }]);
-      if (platform === '__exit__') {
-        console.log(`\n  ${YELLOW}Exiting. No changes made.${RESET}\n`);
-        return;
-      }
-      results = [makeSyntheticResult(platform, targetPath)];
-      console.log(`\n  ${CYAN}ℹ️  Configuring platform: ${platform}${RESET}\n`);
+    const detectedNames = results.map(r => r.platform);
+    const makeChoice = (name, value) => ({
+      name: name + (detectedNames.includes(value) ? ` ${GREEN}✅${RESET}` : ''),
+      value,
+    });
+    const { platform } = await inquirer.prompt([{
+      type: 'select',
+      name: 'platform',
+      message: 'Select target platform to configure:',
+      choices: [
+        makeChoice('OpenCode (.opencode/, AGENTS.md)', 'opencode'),
+        makeChoice('VS Code / Copilot (.github/copilot-instructions.md)', 'vscode'),
+        makeChoice('Claude Code (CLAUDE.md, .claude/)', 'claude'),
+        makeChoice('Antigravity (antigravity.yaml)', 'antigravity'),
+        makeChoice('Generic (.agents/ convention)', 'vanilla'),
+        new inquirer.Separator(),
+        { name: '🚪 Exit — show available commands', value: '__exit__' },
+      ],
+    }]);
+    if (platform === '__exit__') {
+      console.log(`\n  ${GREEN}✅ If your platform is already set up, here are available commands:${RESET}\n`);
+      console.log(`  ${CYAN}doctor .${RESET}         — Diagnose existing configuration`);
+      console.log(`  ${CYAN}validate .${RESET}       — Validate agent-skill consistency`);
+      console.log(`  ${CYAN}report .${RESET}         — Generate diagnostic report`);
+      console.log(`  ${CYAN}inject .${RESET}         — Inject specific components (--agents, --skills, etc.)`);
+      console.log(`  ${CYAN}update .${RESET}         — Regenerate workflows and test cases`);
+      console.log(`  ${CYAN}list-platforms${RESET}   — Show detectable platforms\n`);
+      console.log(`  ${YELLOW}Run any command with --help for more details.${RESET}\n`);
+      return;
     }
+    if (!detectedNames.includes(platform)) {
+      results.push(makeSyntheticResult(platform, targetPath));
+    }
+    console.log(`\n  ${CYAN}ℹ️  Selected platform: ${platform}${RESET}\n`);
 
     const { components } = await inquirer.prompt([{
       type: 'checkbox',

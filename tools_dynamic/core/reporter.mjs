@@ -39,6 +39,7 @@ export class Reporter {
           name: a.name,
           mode: a.mode,
           role: a.role,
+          model: a.model || null,
           keywords: a.keywords,
           keywordCount: a.keywords.length,
           sections: a.sections,
@@ -294,10 +295,10 @@ export class Reporter {
           console.log(`  ${CYAN}   Or use --platform vanilla for the generic .agents/ convention${RESET}`);
           console.log(`  💡 Run ${CYAN}tools-dynamic init${RESET} to bootstrap agent configuration.\n`);
         } else {
-          console.log(`  💡 Run ${CYAN}tools-dynamic list-platforms${RESET} to see detectable platforms.\n`);
+          console.log(`  💡 Run ${CYAN}tools-dynamic init${RESET} to bootstrap agent configuration.\n`);
         }
       } catch {
-        console.log(`  ℹ️  Run ${CYAN}tools-dynamic list-platforms${RESET} to see detectable platforms.\n`);
+        console.log(`  ℹ️  Run ${CYAN}tools-dynamic init${RESET} to bootstrap agent configuration.\n`);
       }
       return;
     }
@@ -318,7 +319,8 @@ export class Reporter {
         for (const agent of platform.agents) {
           const handoffIcon = agent.hasHandoff ? '📋' : '  ';
           const kwWarning = agent.keywords.length < 10 ? `${YELLOW}⚠${RESET}` : ' ';
-          console.log(`       ${handoffIcon} ${agent.name} (${agent.mode}) — ${agent.role} ${kwWarning}`);
+          const modelStr = agent.model ? `${agent.model}` : `${YELLOW}default${RESET}`;
+          console.log(`       ${handoffIcon} ${agent.name} (${agent.mode}) — ${agent.role} ${kwWarning} [model: ${modelStr}]`);
           if (agent.keywords.length > 0) {
             console.log(`          Keywords: ${agent.keywords.slice(0, 8).join(', ')}${agent.keywords.length > 8 ? '...' : ''}`);
           }
@@ -349,8 +351,15 @@ export class Reporter {
   }
 
   printDiagnosis(results, projectPath) {
-    const issues = this.diagnose(results);
     console.log(`\n  ${BOLD}🔬 Diagnosis: ${projectPath}${RESET}\n`);
+
+    if (results.length === 0) {
+      console.log(`  ${YELLOW}⚠️  No configuration detected.${RESET}`);
+      console.log(`  💡 Run ${CYAN}tools-dynamic init${RESET} to bootstrap agent setup.\n`);
+      return;
+    }
+
+    const issues = this.diagnose(results);
 
     if (issues.length === 0) {
       console.log(`  ${GREEN}No issues found. Configuration looks good!${RESET}\n`);
@@ -440,6 +449,16 @@ export class Reporter {
               severity: 'blocker',
               message: `"${agent.name}" has edit: deny but no security/review keywords — may be incorrectly permissioned`,
               suggestion: 'Add security/review keywords or update permissions',
+            });
+          }
+
+          if (!agent.model) {
+            issues.push({
+              platform: platform.platform,
+              agent: agent.name,
+              severity: 'warning',
+              message: `"${agent.name}" is read-only (edit: deny) but has no specialized model assigned — will use project default`,
+              suggestion: 'Add model: <name> to the agent frontmatter (e.g. model: claude-sonnet-4-20250514) for cost optimization',
             });
           }
         }

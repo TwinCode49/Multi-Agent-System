@@ -149,11 +149,17 @@ The primary agent uses the project default model. Secondary agents may use speci
         skillsDir = '.agents/rules';
         githubSkillsDir = '.github/skills';
         platformDir = '.agents';
+      } else if (pName === 'vanilla') {
+        agentsDir = '.agents/agents';
+        skillsDir = '.agents/skills';
+        githubSkillsDir = '.github/skills';
+        platformDir = '.agents';
       }
     }
 
     let language = 'Unknown';
     let framework = '';
+    let defaultModel = 'gpt-4o';
 
     try {
       const detector = new VanillaDetector();
@@ -170,6 +176,14 @@ The primary agent uses the project default model. Secondary agents may use speci
       }
     } catch {}
 
+    try {
+      const cfgPath = join(targetPath, platformDir, 'opencode.json');
+      if (existsSync(cfgPath)) {
+        const cfg = JSON.parse(readFileSync(cfgPath, 'utf-8'));
+        if (cfg.defaultModel) defaultModel = cfg.defaultModel;
+      }
+    } catch {}
+
     return {
       agentsDir,
       skillsDir,
@@ -178,6 +192,7 @@ The primary agent uses the project default model. Secondary agents may use speci
       projectName,
       language,
       framework,
+      defaultModel,
       year: new Date().getFullYear().toString(),
     };
   }
